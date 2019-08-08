@@ -15,36 +15,13 @@ __DATA__
             local rx = radix.new({
                 {
                     path = "/aa",
-                    metadata = "metadata /aaa",
-                },
-                {
-                    path = "/dd",
-                    metadata = "metadata /dd",
-                },
-                {
-                    path = "/dd/aa",
-                    metadata = "metadata /dd/aa",
-                },
-                {
-                    path = "/dd/ee",
-                    metadata = "metadata /dd/ee",
-                },
-                {
-                    path = "/dd/ee/jj",
-                    metadata = "metadata /dd/ee/jj",
-                },
-                {
-                    path = "/dd/ee/zz",
-                    metadata = "metadata /dd/ee/zz",
-                },
-                {
-                    path = "/ff/gg",
-                    metadata = "metadata /ff/gg",
+                    metadata = "metadata /aa",
                 }
             })
 
-            local metadata = rx:match("/dd/ee/jj/kk")
-            ngx.say(metadata)
+            ngx.say(rx:match("/aa/bb"))
+            ngx.say(rx:match("/aa"))
+            ngx.say(rx:match("/"))
         }
     }
 --- request
@@ -52,4 +29,72 @@ GET /t
 --- no_error_log
 [error]
 --- response_body
-metadata /dd/ee/jj
+metadata /aa
+metadata /aa
+nil
+
+
+
+=== TEST 2: multiple route
+--- config
+    location /t {
+        content_by_lua_block {
+            local radix = require("resty.radixtree")
+            local rx = radix.new({
+                {
+                    path = "/aa",
+                    metadata = "metadata /aa",
+                },
+                {
+                    path = "/bb",
+                    metadata = "metadata /bb",
+                }
+            })
+
+            ngx.say(rx:match("/"))
+            ngx.say(rx:match("/aa"))
+            ngx.say(rx:match("/aa/"))
+            ngx.say(rx:match("/aa/bb"))
+        }
+    }
+--- request
+GET /t
+--- no_error_log
+[error]
+--- response_body
+nil
+metadata /aa
+metadata /aa
+metadata /aa
+
+
+
+=== TEST 3: multiple route
+--- config
+    location /t {
+        content_by_lua_block {
+            local radix = require("resty.radixtree")
+            local rx = radix.new({
+                {
+                    path = "/aa",
+                    metadata = "metadata /aa",
+                },
+                {
+                    path = "/aa/bb",
+                    metadata = "metadata /aa/bb",
+                },
+                {
+                    path = "/aa/bb/cc",
+                    metadata = "metadata /aa/bb/cc",
+                }
+            })
+
+            ngx.say(rx:match("/aa/bb/cc"))
+        }
+    }
+--- request
+GET /t
+--- no_error_log
+[error]
+--- response_body
+metadata /aa/bb/cc

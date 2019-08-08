@@ -43,6 +43,10 @@ void *
 radix_tree_search(void *t, const unsigned char *buf, size_t len)
 {
     raxIterator *it = malloc(sizeof(raxIterator));
+    if (it == NULL) {
+        return NULL;
+    }
+
     raxStart(it, t);
     raxSeek(it, "<=", (unsigned char *)buf, len);
     return (void *)it;
@@ -59,8 +63,30 @@ radix_tree_next(void *it, const unsigned char *buf, size_t len)
         return NULL;
     }
 
-    fprintf(stderr, "it key len: %lu buf len: %lu, key: %s\n",
-            iter->key_len, len, iter->key);
+    // fprintf(stderr, "it key len: %lu buf len: %lu, key: %.*s\n",
+    //         iter->key_len, len, (int)iter->key_len, iter->key);
+
+    if (iter->key_len > len ||
+        memcmp(buf, iter->key, iter->key_len) != 0) {
+        return NULL;
+    }
+
+    return iter->data;
+}
+
+
+void *
+radix_tree_pcre(void *it, const unsigned char *buf, size_t len)
+{
+    raxIterator    *iter = it;
+
+    int res = raxPrev(iter);
+    if (!res) {
+        return NULL;
+    }
+
+    // fprintf(stderr, "it key len: %lu buf len: %lu, key: %.*s\n",
+    //         iter->key_len, len, (int)iter->key_len, iter->key);
 
     if (iter->key_len > len ||
         memcmp(buf, iter->key, iter->key_len) != 0) {

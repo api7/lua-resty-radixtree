@@ -200,7 +200,6 @@ void raxStart(raxIterator *it, rax *rt);
 int raxSeek(raxIterator *it, const char *op, unsigned char *ele, size_t len);
 int raxNext(raxIterator *it);
 int raxPrev(raxIterator *it);
-int raxRandomWalk(raxIterator *it, size_t steps);
 int raxCompare(raxIterator *iter, const char *op, unsigned char *key, size_t key_len);
 void raxStop(raxIterator *it);
 int raxEOF(raxIterator *it);

@@ -4,8 +4,6 @@ local base        = require("resty.core.base")
 local clear_tab   = require("table.clear")
 local clone_tab   = require("table.clone")
 local bit         = require("bit")
-local str_buff    = base.get_string_buf(256)
-local buf_len_prt = base.get_size_ptr()
 local new_tab     = base.new_tab
 local find_str    = string.find
 local tonumber    = tonumber
@@ -13,23 +11,16 @@ local ipairs      = ipairs
 local ffi         = require "ffi"
 local ffi_cast    = ffi.cast
 local ffi_cdef    = ffi.cdef
-local ffi_string  = ffi.string
-local C           = ffi.C
-local ffi_new     = ffi.new
 local insert_tab  = table.insert
 local string      = string
 local io          = io
 local package     = package
 local getmetatable=getmetatable
 local setmetatable=setmetatable
-local ngx_log     = ngx.log
-local ngx_ERR     = ngx.ERR
 local type        = type
 local error       = error
 local newproxy    = _G.newproxy
 local str_sub     = string.sub
-local buf         = ffi_new("char *[1]")
-local buf_size    = ffi_new("size_t[1]")
 
 
 local function load_shared_lib(so_name)
@@ -80,9 +71,21 @@ ffi_cdef[[
     int radix_tree_insert(void *t, const unsigned char *buf, size_t len,
         void *data);
     void *radix_tree_search(void *t, const unsigned char *buf, size_t len);
+    void *radix_tree_pcre(void *it, const unsigned char *buf, size_t len);
     void *radix_tree_next(void *it, const unsigned char *buf, size_t len);
     int radix_tree_stop(void *it);
 ]]
+
+
+local METHODS = {
+  GET     = 2,
+  POST    = bit.lshift(2, 1),
+  PUT     = bit.lshift(2, 2),
+  DELETE  = bit.lshift(2, 3),
+  PATCH   = bit.lshift(2, 4),
+  HEAD    = bit.lshift(2, 5),
+  OPTIONS = bit.lshift(2, 16),
+}
 
 
 local _M = { _VERSION = '0.01' }
@@ -109,17 +112,6 @@ end
 local mt = { __index = _M, __gc = gc_free }
 
 
-local _METHODS = {
-  GET     = 2,
-  POST    = bit.lshift(2, 1),
-  PUT     = bit.lshift(2, 2),
-  DELETE  = bit.lshift(2, 3),
-  PATCH   = bit.lshift(2, 4),
-  HEAD    = bit.lshift(2, 5),
-  OPTIONS = bit.lshift(2, 6),
-}
-
-
 local function insert_route(self, opts)
     local path    = opts.path
     local metadata = opts.metadata
@@ -133,11 +125,14 @@ local function insert_route(self, opts)
     end
 
     self.match_data_index = self.match_data_index + 1
-    self.match_data[self.match_data_index] = metadata
+    opts = clone_tab(opts)
+    self.match_data[self.match_data_index] = opts
 
     local dataptr = ffi_cast('void *', self.match_data_index)
     radix.radix_tree_insert(self.tree, path, #path, dataptr)
-    insert_tab(self.cached_routes_opt, clone_tab(opts))
+    -- ngx.log(ngx.INFO, "insert route: ", path)
+
+    insert_tab(self.cached_routes_opt, opts)
     return true
 end
 
@@ -172,12 +167,12 @@ function _M.new(routes)
         local method  = route.method
         local bit_methods
         if type(method) ~= "table" then
-            bit_methods = method and _METHODS[method] or 0
+            bit_methods = method and METHODS[method] or 0
 
         else
             bit_methods = 0
             for _, m in ipairs(method) do
-                bit_methods = bit.bor(bit_methods, _METHODS[m])
+                bit_methods = bit.bor(bit_methods, METHODS[m])
             end
         end
 
@@ -220,38 +215,67 @@ function _M.free(self)
 end
 
 
-local function match_route(self, path)
+local function match_route_opts(route, opts)
+    local method = opts.method
+    if route.method ~= 0 and
+        bit.band(route.method, METHODS[method]) == 0 then
+        return false
+    end
+
+    if route.host then
+        if #route.host > #opts.host then
+            return false
+        end
+
+        if route.host_is_wildcard then
+            local i = opts.host:reverse():find(route.host_wildcard, 1, true)
+            if i ~= 1 then
+                return false
+            end
+
+        elseif route.host ~= opts.host then
+            return false
+        end
+    end
+
+    return true
+end
+
+
+local function match_route(self, path, opts)
     local it = radix.radix_tree_search(self.tree, path, #path)
     if not it then
         return nil, "failed to match"
     end
 
-
-    local metadata
+    local matched_route
     while true do
-        local data_idx = radix.radix_tree_next(it, path, #path)
+        local data_idx = radix.radix_tree_pcre(it, path, #path)
         if data_idx == nil then
             break
         end
 
-        -- get match data from index
         local idx = tonumber(ffi_cast('intptr_t', data_idx))
-        metadata = self.match_data[idx]
-        ngx.log(ngx.WARN, "metadata: ", metadata)
+        matched_route = self.match_data[idx]
+        -- ngx.log(ngx.INFO, "metadata: ", metadata)
+
+        if match_route_opts(matched_route, opts) then
+            break
+        end
+        matched_route = nil
     end
 
-    -- free
     radix.radix_tree_stop(it)
-    return metadata
+    return matched_route and matched_route.metadata
 end
 
-
+    local empty_table = {}
 function _M.match(self, path, opts)
     if type(path) ~= "string" then
         error("invalid argument path", 2)
     end
 
-    local ok = match_route(self, path, opts)
+    local ok = match_route(self, path, opts or empty_table)
     return ok
 end
 

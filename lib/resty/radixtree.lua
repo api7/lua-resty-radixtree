@@ -21,6 +21,7 @@ local type        = type
 local error       = error
 local newproxy    = _G.newproxy
 local str_sub     = string.sub
+local sort_tab    = table.sort
 
 
 local function load_shared_lib(so_name)
@@ -242,13 +243,20 @@ local function match_route_opts(route, opts)
 end
 
 
+local function sort_route(l, r)
+    ngx.log(ngx.WARN, require("cjson").encode(l))
+    return #l.path >= #r.path
+end
+
+
+    local matched_routes = {}
 local function match_route(self, path, opts)
     local it = radix.radix_tree_search(self.tree, path, #path)
     if not it then
         return nil, "failed to match"
     end
 
-    local matched_route
+    clear_tab(matched_routes)
     while true do
         local data_idx = radix.radix_tree_pcre(it, path, #path)
         if data_idx == nil then
@@ -256,17 +264,30 @@ local function match_route(self, path, opts)
         end
 
         local idx = tonumber(ffi_cast('intptr_t', data_idx))
-        matched_route = self.match_data[idx]
-        -- ngx.log(ngx.INFO, "metadata: ", metadata)
-
-        if match_route_opts(matched_route, opts) then
-            break
+        local route = self.match_data[idx]
+        if route then
+            insert_tab(matched_routes, route)
         end
-        matched_route = nil
     end
 
     radix.radix_tree_stop(it)
-    return matched_route and matched_route.metadata
+
+    if #matched_routes == 0 then
+        return nil
+    end
+
+    ngx.log(ngx.WARN, "matched_routes: ", require("cjson").encode(matched_routes))
+    sort_tab(matched_routes, sort_route)
+    ngx.log(ngx.WARN, "matched_routes: ", require("cjson").encode(matched_routes))
+
+    for _, route in ipairs(matched_routes) do
+        ngx.log(ngx.WARN, "path: ", route.patch)
+        if match_route_opts(route, opts) then
+            return route.metadata
+        end
+    end
+
+    return nil
 end
 
     local empty_table = {}

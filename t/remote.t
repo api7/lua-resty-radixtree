@@ -71,3 +71,70 @@ metadata /aa -> 127.0.0.1
 metadata /aa -> 127.0.0.1
 nil
 nil
+
+
+
+=== TEST 3: ipv6
+--- config
+    location /t {
+        content_by_lua_block {
+            local radix = require("resty.radixtree")
+            local rx = radix.new({
+                {
+                    path = "/aa",
+                    metadata = "metadata /aa -> ::1",
+                    remote_addr = "::1",
+                },
+                {
+                    path = "/bb",
+                    metadata = "metadata /aa -> ::2",
+                    remote_addr = "::2",
+                }
+            })
+
+            ngx.say(rx:match("/aa", {remote_addr = "::1"}))
+            ngx.say(rx:match("/aa", {remote_addr = "::2"}))
+            ngx.say(rx:match("/bb", {remote_addr = "::1"}))
+            ngx.say(rx:match("/bb", {remote_addr = "::2"}))
+        }
+    }
+--- request
+GET /t
+--- no_error_log
+[error]
+--- response_body
+metadata /aa -> ::1
+nil
+nil
+metadata /aa -> ::2
+
+
+
+=== TEST 4: ipv6 with mask
+--- config
+    location /t {
+        content_by_lua_block {
+            local radix = require("resty.radixtree")
+            local rx = radix.new({
+                {
+                    path = "/aa",
+                    metadata = "metadata /aa -> fe80::1/64",
+                    remote_addr = "fe80::1/64",
+                }
+            })
+
+            ngx.say(rx:match("/aa", {remote_addr = "::1"}))
+            ngx.say(rx:match("/aa", {remote_addr = "fe80::1"}))
+            ngx.say(rx:match("/aa", {remote_addr = "fe80:fe::1"}))
+            ngx.say(rx:match("/aa", {remote_addr = "80::1"}))
+        }
+    }
+--- request
+GET /t
+--- no_error_log
+[error]
+--- response_body
+nil
+metadata /aa -> fe80::1/64
+nil
+nil

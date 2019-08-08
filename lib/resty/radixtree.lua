@@ -304,6 +304,26 @@ local function match_route_opts(route, opts)
             ~= bit.rshift(remote_addr_inet, route_addr_bits) then
             return false
         end
+
+    elseif remote_addrs and #remote_addrs == 8 then
+        if radix.is_valid_ipv6(opts.remote_addr) ~= 0 then
+            return false
+        end
+
+        local ip_items = ffi_new("ip_addr_item[?]", 4)
+        local ret = radix.parse_ipv6(opts.remote_addr, ip_items)
+        if ret ~= 0 then
+            error("failed to parse ipv6 address: " .. opts.remote_addr)
+        end
+
+        for i = 1, 4 do
+            local route_addr_bits = 32 - remote_addrs[i * 2]
+            local remote_addr_inet = ip_items[i - 1].val
+            if bit.rshift(remote_addrs[i * 2 - 1], route_addr_bits)
+                ~= bit.rshift(remote_addr_inet, route_addr_bits) then
+                return false
+            end
+        end
     end
 
     return true

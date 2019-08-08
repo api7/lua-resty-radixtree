@@ -30,6 +30,14 @@ __DATA__
                     metadata = "metadata /dd/ee",
                 },
                 {
+                    path = "/dd/ee/jj",
+                    metadata = "metadata /dd/ee/jj",
+                },
+                {
+                    path = "/dd/ee/zz",
+                    metadata = "metadata /dd/ee/zz",
+                },
+                {
                     path = "/ff/gg",
                     metadata = "metadata /ff/gg",
                 }
@@ -44,4 +52,4 @@ GET /t
 --- no_error_log
 [error]
 --- response_body
-metadata /dd/ee
+metadata /dd/ee/jj

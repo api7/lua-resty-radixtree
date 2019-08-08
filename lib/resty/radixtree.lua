@@ -134,9 +134,8 @@ local function insert_route(self, opts)
 
     self.match_data_index = self.match_data_index + 1
     self.match_data[self.match_data_index] = metadata
-    local dataptr = ffi_cast('void *',
-                             ffi_cast('intptr_t', self.match_data_index))
 
+    local dataptr = ffi_cast('void *', self.match_data_index)
     radix.radix_tree_insert(self.tree, path, #path, dataptr)
     insert_tab(self.cached_routes_opt, clone_tab(opts))
     return true

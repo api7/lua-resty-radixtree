@@ -11,6 +11,7 @@ local ipairs      = ipairs
 local ffi         = require "ffi"
 local ffi_cast    = ffi.cast
 local ffi_cdef    = ffi.cdef
+local ffi_new     = ffi.new
 local insert_tab  = table.insert
 local string      = string
 local io          = io
@@ -75,6 +76,17 @@ ffi_cdef[[
     void *radix_tree_pcre(void *it, const unsigned char *buf, size_t len);
     void *radix_tree_next(void *it, const unsigned char *buf, size_t len);
     int radix_tree_stop(void *it);
+
+    unsigned int inet_network(const char *cp);
+
+    typedef struct {
+        unsigned int   val;
+        int            bit;
+    } ip_addr_item;
+
+    int is_valid_ipv4(const char *ipv4);
+    int is_valid_ipv6(const char *ipv6);
+    int parse_ipv6(const char *ipv6, ip_addr_item *addr_items);
 ]]
 
 
@@ -193,15 +205,47 @@ function _M.new(routes)
         route_opts.host    = route.host
 
         if route.remote_addr then
-            local idx = find_str(route.remote_addr, "/", 1, true)
+            local remote_addr = route.remote_addr
+            local remote_addr_bits
+
+            local idx = find_str(remote_addr, "/", 1, true)
             if idx then
-                route_opts.remote_addr  = str_sub(route.remote_addr, 1, idx - 1)
-                route_opts.remote_addr_bits = str_sub(route.remote_addr,
-                                                      idx + 1)
+                remote_addr  = str_sub(remote_addr, 1, idx - 1)
+                remote_addr_bits = str_sub(route.remote_addr, idx + 1)
+                remote_addr_bits = tonumber(remote_addr_bits)
+            end
+
+            if radix.is_valid_ipv4(remote_addr) == 0 then
+                route_opts.remote_addrs = {
+                    radix.inet_network(remote_addr),
+                    remote_addr_bits or 32,
+                }
+
+            elseif radix.is_valid_ipv6(remote_addr) == 0 then
+                local ip_items = ffi_new("ip_addr_item[?]", 4)
+                local ret = radix.parse_ipv6(remote_addr, ip_items)
+                if ret ~= 0 then
+                    error("failed to parse ipv6 address: " .. remote_addr)
+                end
+
+                route_opts.remote_addrs = new_tab(4, 0)
+                remote_addr_bits = remote_addr_bits or 128
+                for j = 1, 4 do
+                    insert_tab(route_opts.remote_addrs, ip_items[j - 1].val)
+
+                    if remote_addr_bits >= 32 then
+                        insert_tab(route_opts.remote_addrs, 32)
+                    elseif remote_addr_bits > 0 then
+                        insert_tab(route_opts.remote_addrs, remote_addr_bits)
+                    else
+                        insert_tab(route_opts.remote_addrs, 0)
+                    end
+
+                    remote_addr_bits = remote_addr_bits - 32
+                end
 
             else
-                route_opts.remote_addr = route.remote_addr
-                route_opts.remote_addr_bits = 32
+                error("invalid ip address: " .. remote_addr)
             end
         end
 
@@ -248,6 +292,20 @@ local function match_route_opts(route, opts)
         end
     end
 
+    local remote_addrs = route.remote_addrs
+    if remote_addrs and #remote_addrs == 2 then
+        if radix.is_valid_ipv4(opts.remote_addr) ~= 0 then
+            return false
+        end
+
+        local route_addr_bits = 32 - remote_addrs[2]
+        local remote_addr_inet = radix.inet_network(opts.remote_addr)
+        if bit.rshift(remote_addrs[1], route_addr_bits)
+            ~= bit.rshift(remote_addr_inet, route_addr_bits) then
+            return false
+        end
+    end
+
     return true
 end
 
@@ -274,6 +332,7 @@ local function match_route(self, path, opts)
 
         local idx = tonumber(ffi_cast('intptr_t', data_idx))
         local route = self.match_data[idx]
+        ngx.log(ngx.WARN, "route: ", require("cjson").encode(route))
         if route then
             insert_tab(matched_routes, route)
         end

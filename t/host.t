@@ -34,7 +34,7 @@ nil
 
 
 
-=== TEST 2: sanity
+=== TEST 2: wildcard
 --- config
     location /t {
         content_by_lua_block {

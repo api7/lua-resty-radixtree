@@ -178,6 +178,15 @@ function _M.new(routes)
         end
 
         clear_tab(route_opts)
+
+        local host = route.host
+        if host and host:sub(1, 1) == '*' then
+            route_opts.host_is_wildcard = true
+            route_opts.host_wildcard = host:sub(2):reverse()
+        else
+            route_opts.host = host
+        end
+
         route_opts.path    = route.path
         route_opts.metadata = route.metadata
         route_opts.method  = bit_methods
@@ -276,12 +285,9 @@ local function match_route(self, path, opts)
         return nil
     end
 
-    ngx.log(ngx.WARN, "matched_routes: ", require("cjson").encode(matched_routes))
     sort_tab(matched_routes, sort_route)
-    ngx.log(ngx.WARN, "matched_routes: ", require("cjson").encode(matched_routes))
 
     for _, route in ipairs(matched_routes) do
-        ngx.log(ngx.WARN, "path: ", route.patch)
         if match_route_opts(route, opts) then
             return route.metadata
         end

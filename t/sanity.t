@@ -98,3 +98,40 @@ GET /t
 [error]
 --- response_body
 metadata /aa/bb/cc
+
+
+
+=== TEST 4: use `method` to filter route
+--- config
+    location /t {
+        content_by_lua_block {
+            local radix = require("resty.radixtree")
+            local rx = radix.new({
+                {
+                    path = "/aa",
+                    metadata = "metadata /aa",
+                },
+                {
+                    path = "/aa/bb",
+                    metadata = "metadata /aa/bb",
+                },
+                {
+                    path = "/aa/bb/cc",
+                    metadata = "metadata /aa/bb/cc",
+                    method = {"POST", "PUT"}
+                }
+            })
+
+            ngx.say(rx:match("/aa/bb/cc", {method = "GET"}))
+            ngx.say(rx:match("/aa/bb/cc", {method = "OPTIONS"}))
+            ngx.say(rx:match("/aa/bb/cc", {method = "POST"}))
+        }
+    }
+--- request
+GET /t
+--- no_error_log
+[error]
+--- response_body
+metadata /aa/bb
+metadata /aa/bb
+metadata /aa/bb/cc

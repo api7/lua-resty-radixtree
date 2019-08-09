@@ -23,8 +23,8 @@ local error       = error
 local newproxy    = _G.newproxy
 local str_sub     = string.sub
 local sort_tab    = table.sort
-local cur_level = ngx.config.subsystem == "http" and
-                  require "ngx.errlog" .get_sys_filter_level()
+local cur_level   = ngx.config.subsystem == "http" and
+                    require "ngx.errlog" .get_sys_filter_level()
 
 
 local function load_shared_lib(so_name)
@@ -82,14 +82,9 @@ ffi_cdef[[
 
     unsigned int inet_network(const char *cp);
 
-    typedef struct {
-        unsigned int   val;
-        int            bit;
-    } ip_addr_item;
-
     int is_valid_ipv4(const char *ipv4);
     int is_valid_ipv6(const char *ipv6);
-    int parse_ipv6(const char *ipv6, ip_addr_item *addr_items);
+    int parse_ipv6(const char *ipv6, int *addr_items);
 ]]
 
 
@@ -262,7 +257,7 @@ function _M.new(routes)
                 }
 
             elseif radix.is_valid_ipv6(remote_addr) == 0 then
-                local ip_items = ffi_new("ip_addr_item[?]", 4)
+                local ip_items = ffi_new("unsigned int [4]")
                 local ret = radix.parse_ipv6(remote_addr, ip_items)
                 if ret ~= 0 then
                     error("failed to parse ipv6 address: " .. remote_addr)
@@ -271,7 +266,7 @@ function _M.new(routes)
                 route_opts.remote_addrs = new_tab(4, 0)
                 remote_addr_bits = remote_addr_bits or 128
                 for j = 1, 4 do
-                    insert_tab(route_opts.remote_addrs, ip_items[j - 1].val)
+                    insert_tab(route_opts.remote_addrs, ip_items[j - 1])
 
                     if remote_addr_bits >= 32 then
                         insert_tab(route_opts.remote_addrs, 32)
@@ -369,7 +364,7 @@ local function match_route_opts(route, opts)
             return false
         end
 
-        local ip_items = ffi_new("ip_addr_item[?]", 4)
+        local ip_items = ffi_new("unsigned int[4]")
         local ret = radix.parse_ipv6(opts.remote_addr, ip_items)
         if ret ~= 0 then
             error("failed to parse ipv6 address: " .. opts.remote_addr)
@@ -377,7 +372,7 @@ local function match_route_opts(route, opts)
 
         for i = 1, 4 do
             local route_addr_bits = 32 - remote_addrs[i * 2]
-            local remote_addr_inet = ip_items[i - 1].val
+            local remote_addr_inet = ip_items[i - 1]
             if bit.rshift(remote_addrs[i * 2 - 1], route_addr_bits)
                 ~= bit.rshift(remote_addr_inet, route_addr_bits) then
                 return false

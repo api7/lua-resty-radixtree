@@ -156,7 +156,7 @@ is_valid_ipv6(const char *ipv6)
 }
 
 int
-parse_ipv6(const char *ipv6, ip_addr_item *addr_items)
+parse_ipv6(const char *ipv6, unsigned int *addr_32)
 {
     unsigned int       addr6[4];
     int                i;
@@ -170,7 +170,7 @@ parse_ipv6(const char *ipv6, ip_addr_item *addr_items)
     }
 
     for (i = 0; i < 4; i++) {
-        addr_items[i].val = ntohl(addr6[i]);
+        addr_32[i] = ntohl(addr6[i]);
     }
 
     return 0;

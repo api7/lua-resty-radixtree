@@ -205,11 +205,28 @@ function _M.new(routes)
         clear_tab(route_opts)
 
         local host = route.host
-        if host and host:sub(1, 1) == '*' then
-            route_opts.host_is_wildcard = true
-            route_opts.host_wildcard = host:sub(2):reverse()
+        if type(host) == "table" and #host > 0 then
+            route_opts.hosts = {}
+            for _, h in ipairs(host) do
+                local host_is_wildcard = false
+                if h and h:sub(1, 1) == '*' then
+                    host_is_wildcard = true
+                    h = h:sub(2):reverse()
+                end
+
+                insert_tab(route_opts.hosts, host_is_wildcard)
+                insert_tab(route_opts.hosts, h)
+            end
+
+        elseif type(host) == "string" then
+            local host_is_wildcard = false
+            if host and host:sub(1, 1) == '*' then
+                host_is_wildcard = true
+                host = host:sub(2):reverse()
+            end
+
+            route_opts.hosts = {host_is_wildcard, host}
         end
-        route_opts.host = host
 
         local path = route.path
         local prefix_path = route.prefix_path
@@ -292,6 +309,24 @@ function _M.free(self)
 end
 
 
+local function match_host(route_host_is_wildcard, route_host, request_host)
+    if #route_host > #request_host then
+        return false
+    end
+
+    if not route_host_is_wildcard then
+        return route_host == request_host
+    end
+
+    local i = request_host:reverse():find(route_host, 1, true)
+    if i ~= 1 then
+        return false
+    end
+
+    return true
+end
+
+
 local function match_route_opts(route, opts)
     local method = opts.method
     if route.method ~= 0 and
@@ -299,18 +334,19 @@ local function match_route_opts(route, opts)
         return false
     end
 
-    if route.host then
-        if #route.host > #opts.host then
-            return false
+    log_info("route.hosts: ", type(route.hosts))
+    if route.hosts then
+        local matched = false
+        local hosts = route.hosts
+        for i = 1, #route.hosts, 2 do
+            if match_host(hosts[i], hosts[i + 1], opts.host) then
+                matched = true
+                break
+            end
         end
 
-        if route.host_is_wildcard then
-            local i = opts.host:reverse():find(route.host_wildcard, 1, true)
-            if i ~= 1 then
-                return false
-            end
-
-        elseif route.host ~= opts.host then
+        log_info("hosts match: ", matched)
+        if not matched then
             return false
         end
     end

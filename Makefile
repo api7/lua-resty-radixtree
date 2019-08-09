@@ -19,7 +19,7 @@ endif
 MY_CFLAGS := $(CFLAGS) -DBUILDING_SO
 MY_LDFLAGS := $(LDFLAGS) -fvisibility=hidden
 
-OBJS := rax.o easy_rax.o
+OBJS := src/rax.o src/easy_rax.o
 
 .PHONY: default
 default: compile
@@ -43,7 +43,7 @@ clean:
 compile: ${R3_FOLDER} ${R3_CONGIGURE} ${R3_STATIC_LIB} $(C_SO_NAME)
 
 ${OBJS} : %.o : %.c
-	$(CC) $(MY_CFLAGS) -c $<
+	$(CC) $(MY_CFLAGS) -c $< -o $@
 
 ${C_SO_NAME} : ${OBJS}
 	$(CC) $(MY_LDFLAGS) $(OBJS) -o $@

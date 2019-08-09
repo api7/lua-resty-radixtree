@@ -23,6 +23,8 @@ local error       = error
 local newproxy    = _G.newproxy
 local str_sub     = string.sub
 local sort_tab    = table.sort
+local cur_level = ngx.config.subsystem == "http" and
+                  require "ngx.errlog" .get_sys_filter_level()
 
 
 local function load_shared_lib(so_name)
@@ -72,6 +74,7 @@ ffi_cdef[[
     int radix_tree_destroy(void *t);
     int radix_tree_insert(void *t, const unsigned char *buf, size_t len,
         void *data);
+    void *radix_tree_find(void *t, const unsigned char *buf, size_t len);
     void *radix_tree_search(void *t, const unsigned char *buf, size_t len);
     void *radix_tree_pcre(void *it, const unsigned char *buf, size_t len);
     void *radix_tree_next(void *it, const unsigned char *buf, size_t len);
@@ -122,30 +125,41 @@ local function gc_free(self)
 end
 
 
+    local ngx_log = ngx.log
+    local ngx_INFO = ngx.INFO
+local function log_info(...)
+    if cur_level and ngx_INFO > cur_level then
+        return
+    end
+
+    return ngx_log(ngx_INFO, ...)
+end
+
+
 local mt = { __index = _M, __gc = gc_free }
 
 
 local function insert_route(self, opts)
     local path    = opts.path
-    local metadata = opts.metadata
+    opts = clone_tab(opts)
 
-    if type(path) ~= "string" then
-        error("invalid argument path")
-    end
-
-    if type(metadata) == "nil" then
-        error("invalid argument handler")
+    local data_idx = radix.radix_tree_find(self.tree, path, #path)
+    log_info("find: ", path, " matched: ", tostring(data_idx))
+    if data_idx then
+        local idx = tonumber(ffi_cast('intptr_t', data_idx))
+        local routes = self.match_data[idx]
+        if routes and routes[1].path == path then
+            insert_tab(routes, opts)
+            return
+        end
     end
 
     self.match_data_index = self.match_data_index + 1
-    opts = clone_tab(opts)
-    self.match_data[self.match_data_index] = opts
+    self.match_data[self.match_data_index] = {opts}
 
     local dataptr = ffi_cast('void *', self.match_data_index)
     radix.radix_tree_insert(self.tree, path, #path, dataptr)
-    -- ngx.log(ngx.INFO, "insert route: ", path)
-
-    insert_tab(self.cached_routes_opt, opts)
+    log_info("insert route path: ", path, " dataprt: ", tostring(dataptr))
     return true
 end
 
@@ -162,14 +176,13 @@ function _M.new(routes)
             tree = radix.radix_tree_new(),
             match_data_index = 0,
             match_data = new_tab(#routes, 0),
-            cached_routes_opt = new_tab(#routes, 0),
         }, mt)
 
     -- register routes
     for i = 1, route_n do
         local route = routes[i]
 
-        if type(route.path) ~= "string" then
+        if type(route.path) ~= "string" and type(route.prefix_path) ~= "string" then
             error("invalid argument path", 2)
         end
 
@@ -199,10 +212,18 @@ function _M.new(routes)
             route_opts.host = host
         end
 
-        route_opts.path    = route.path
+        local path = route.path
+        local prefix_path = route.prefix_path
+        if not path and prefix_path then
+            path = prefix_path
+            route_opts.path_op = "<="
+        else
+            route_opts.path_op = "="
+        end
+        route_opts.path = path
+
         route_opts.metadata = route.metadata
         route_opts.method  = bit_methods
-        route_opts.host    = route.host
 
         if route.remote_addr then
             local remote_addr = route.remote_addr
@@ -331,7 +352,6 @@ end
 
 
 local function sort_route(l, r)
-    ngx.log(ngx.WARN, require("cjson").encode(l))
     return #l.path >= #r.path
 end
 
@@ -346,15 +366,25 @@ local function match_route(self, path, opts)
     clear_tab(matched_routes)
     while true do
         local data_idx = radix.radix_tree_pcre(it, path, #path)
+        log_info("path: ", path, " data_idx: ", tostring(data_idx))
         if data_idx == nil then
             break
         end
 
         local idx = tonumber(ffi_cast('intptr_t', data_idx))
-        local route = self.match_data[idx]
-        ngx.log(ngx.WARN, "route: ", require("cjson").encode(route))
-        if route then
-            insert_tab(matched_routes, route)
+        local routes = self.match_data[idx]
+        -- log_info("route: ", require("cjson").encode(routes))
+        if routes then
+            for _, route in ipairs(routes) do
+                if route.path_op == "=" then
+                    if route.path == path then
+                        insert_tab(matched_routes, route)
+                        break
+                    end
+                else
+                    insert_tab(matched_routes, route)
+                end
+            end
         end
     end
 

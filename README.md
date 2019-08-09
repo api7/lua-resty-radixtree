@@ -39,7 +39,7 @@ Synopsys
             {
                 prefix_path = "/bb",
                 metadata = "metadata /bb",
-                host = "*.bar.com",
+                host = {"*.bar.com", "gloo.com"},
                 method = {"GET", "POST", "PUT"},
                 remote_addr = "fe80:fe80::/64",
             }

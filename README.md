@@ -78,10 +78,10 @@ The attributes of each element may contain these:
 match
 -----
 
-`syntax: ok = rx:dispatch(path, opts)`
+`syntax: ok = rx:match(path, opts)`
 
 * `path`: client request uri.
-* `opts`: a Lua tale
+* `opts`: a Lua tale (optional).
     * `method`: optional, method name of client request.
     * `host`: optional, client request host, not only supports normal domain name, but also supports wildcard name, both `foo.com` and `*.foo.com` are valid.
     * `remote_addr`: optional, client remote address like `192.168.1.100`, and we can use CIDR format, eg `192.168.1.0/24`.

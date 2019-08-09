@@ -208,9 +208,8 @@ function _M.new(routes)
         if host and host:sub(1, 1) == '*' then
             route_opts.host_is_wildcard = true
             route_opts.host_wildcard = host:sub(2):reverse()
-        else
-            route_opts.host = host
         end
+        route_opts.host = host
 
         local path = route.path
         local prefix_path = route.prefix_path

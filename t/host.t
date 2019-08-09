@@ -91,3 +91,34 @@ GET /t
 metadata /aa
 metadata /aa
 nil
+
+
+
+=== TEST 4: mutiple domain (wildcard domain)
+--- config
+    location /t {
+        content_by_lua_block {
+            local radix = require("resty.radixtree")
+            local rx = radix.new({
+                {
+                    prefix_path = "/aa",
+                    metadata = "metadata /aa",
+                    host = {"foo.com", "*.bar.com"}
+                }
+            })
+
+            ngx.say(rx:match("/aa/bb", {host = "foo.com"}))
+            ngx.say(rx:match("/aa/bb", {host = "bar.com"}))
+            ngx.say(rx:match("/aa/bb", {host = "www.bar.com"}))
+            ngx.say(rx:match("/aa/bb", {host = "ggg.com"}))
+        }
+    }
+--- request
+GET /t
+--- no_error_log
+[error]
+--- response_body
+metadata /aa
+nil
+metadata /aa
+nil

@@ -37,7 +37,7 @@ Synopsys
                 remote_addr = "127.0.0.1",
             },
             {
-                prefix_path = "/bb",
+                path = "/bb*",
                 metadata = "metadata /bb",
                 host = {"*.bar.com", "gloo.com"},
                 method = {"GET", "POST", "PUT"},
@@ -65,8 +65,7 @@ new
 The routes is a array table, like `{ {...}, {...}, {...} }`, Each element in the array is a route, which is a hash table.
 
 The attributes of each element may contain these:
-* `path`: client request uri, absolute match.
-* `prefix_path`: client request uri, prefix match. If the `prefix_path` is `/foo`, then it'll match `/foo/bar` or `/foo/glo/grey` etc. **NOTE**: Only one of `path` or `prefix_path` is allowed for each route, if you use them together, an error message will be thrown.
+* `path`: client request uri, the default is a full match. But if the end of the path is `*`, it means that this is a prefix path. For example `/foo*`, it'll match `/foo/bar` or `/foo/glo/grey` etc.
 * `metadata`: Will return this field if matched this route.
 * `host`: optional, client request host, not only supports normal domain name, but also supports wildcard name, both `foo.com` and `*.foo.com` are valid.
 * `remote_addr`: optional, client remote address like `192.168.1.100`, and we can use CIDR format, eg `192.168.1.0/24`.

@@ -18,7 +18,7 @@ __DATA__
                     metadata = "metadata /",
                 },
                 {
-                    prefix_path = "/",
+                    path = "/*",
                     metadata = "metadata /*",
                 },
                 {
@@ -26,7 +26,7 @@ __DATA__
                     metadata = "metadata /aa",
                 },
                 {
-                    prefix_path = "/aa",
+                    path = "/aa*",
                     metadata = "metadata /aa*",
                 }
             })
@@ -56,7 +56,7 @@ metadata /
             local radix = require("resty.radixtree")
             local rx = radix.new({
                 {
-                    prefix_path = "/aa",
+                    path = "/aa*",
                     metadata = "metadata /aa",
                 }
             })
@@ -84,11 +84,11 @@ nil
             local radix = require("resty.radixtree")
             local rx = radix.new({
                 {
-                    prefix_path = "/aa",
+                    path = "/aa*",
                     metadata = "metadata /aa",
                 },
                 {
-                    prefix_path = "/bb",
+                    path = "/bb*",
                     metadata = "metadata /bb",
                 }
             })
@@ -150,15 +150,15 @@ metadata /aa/bb/cc
             local radix = require("resty.radixtree")
             local rx = radix.new({
                 {
-                    prefix_path = "/aa",
+                    path = "/aa*",
                     metadata = "metadata /aa",
                 },
                 {
-                    prefix_path = "/aa/bb",
+                    path = "/aa/bb*",
                     metadata = "metadata /aa/bb",
                 },
                 {
-                    prefix_path = "/aa/bb/cc",
+                    path = "/aa/bb/cc*",
                     metadata = "metadata /aa/bb/cc",
                     method = {"POST", "PUT"}
                 }

@@ -177,7 +177,7 @@ function _M.new(routes)
     for i = 1, route_n do
         local route = routes[i]
 
-        if type(route.path) ~= "string" and type(route.prefix_path) ~= "string" then
+        if type(route.path) ~= "string" then
             error("invalid argument path", 2)
         end
 
@@ -224,12 +224,8 @@ function _M.new(routes)
         end
 
         local path = route.path
-        local prefix_path = route.prefix_path
-        if path and prefix_path then
-            error("field `path` and `prefix_path` can not work together")
-        end
-        if not path and prefix_path then
-            path = prefix_path
+        if path:sub(#path) == "*" then
+            path = path:sub(1, #path - 1)
             route_opts.path_op = "<="
         else
             route_opts.path_op = "="

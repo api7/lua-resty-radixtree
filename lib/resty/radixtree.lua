@@ -213,6 +213,9 @@ function _M.new(routes)
 
         local path = route.path
         local prefix_path = route.prefix_path
+        if path and prefix_path then
+            error("field `path` and `prefix_path` can not work together")
+        end
         if not path and prefix_path then
             path = prefix_path
             route_opts.path_op = "<="

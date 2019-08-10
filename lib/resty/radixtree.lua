@@ -181,8 +181,8 @@ function _M.new(routes)
             error("invalid argument path", 2)
         end
 
-        if type(route.metadata) == "nil" then
-            error("missing argument metadata", 2)
+        if type(route.metadata) == "nil" and type(route.handler) == "nil" then
+            error("missing argument metadata or handler", 2)
         end
 
         local method  = route.method
@@ -233,6 +233,7 @@ function _M.new(routes)
         route_opts.path = path
 
         route_opts.metadata = route.metadata
+        route_opts.handler = route.handler
         route_opts.method  = bit_methods
 
         if route.remote_addr then
@@ -427,7 +428,7 @@ local function match_route(self, path, opts)
 
     for _, route in ipairs(matched_routes) do
         if match_route_opts(route, opts) then
-            return route.metadata
+            return route
         end
     end
 
@@ -440,9 +441,38 @@ function _M.match(self, path, opts)
         error("invalid argument path", 2)
     end
 
-    local ok = match_route(self, path, opts or empty_table)
-    return ok
+    local route, err = match_route(self, path, opts or empty_table)
+    if not route then
+        if err then
+            return nil, err
+        end
+        return nil
+    end
+
+    return route.metadata
 end
 
+
+function _M.dispatch(self, path, opts, ...)
+    if type(path) ~= "string" then
+        error("invalid argument path", 2)
+    end
+
+    local route, err = match_route(self, path, opts or empty_table)
+    if not route then
+        if err then
+            return nil, err
+        end
+        return nil
+    end
+
+    local handler = route.handler
+    if not handler or type(handler) ~= "function" then
+        return nil, "missing handler"
+    end
+
+    handler(...)
+    return true
+end
 
 return _M

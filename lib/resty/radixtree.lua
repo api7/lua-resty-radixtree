@@ -138,6 +138,18 @@ local function insert_route(self, opts)
     local path    = opts.path
     opts = clone_tab(opts)
 
+    if not self.disable_path_cache_opt
+       and opts.path_op == '=' then
+
+        if not self.hash_path[path] then
+            self.hash_path[path] = {opts}
+        else
+            insert_tab(self.hash_path[path], opts)
+        end
+
+        return true
+    end
+
     local data_idx = radix.radix_tree_find(self.tree, path, #path)
     log_info("find: ", path, " matched: ", tostring(data_idx))
     if data_idx then
@@ -145,7 +157,7 @@ local function insert_route(self, opts)
         local routes = self.match_data[idx]
         if routes and routes[1].path == path then
             insert_tab(routes, opts)
-            return
+            return true
         end
     end
 
@@ -171,6 +183,7 @@ function _M.new(routes)
             tree = radix.radix_tree_new(),
             match_data_index = 0,
             match_data = new_tab(#routes, 0),
+            hash_path = new_tab(0, #routes),
         }, mt)
 
     -- register routes
@@ -388,12 +401,29 @@ end
 
     local matched_routes = {}
 local function match_route(self, path, opts)
+    clear_tab(matched_routes)
+    local routes = self.hash_path[path]
+    if routes then
+        for _, route in ipairs(routes) do
+            insert_tab(matched_routes, route)
+        end
+    end
+
+    if #matched_routes > 0 then
+        for _, route in ipairs(matched_routes) do
+            if match_route_opts(route, opts) then
+                return route
+            end
+        end
+
+        clear_tab(matched_routes)
+    end
+
     local it = radix.radix_tree_search(self.tree, path, #path)
     if not it then
         return nil, "failed to match"
     end
 
-    clear_tab(matched_routes)
     while true do
         local data_idx = radix.radix_tree_pcre(it, path, #path)
         log_info("path: ", path, " data_idx: ", tostring(data_idx))
@@ -402,7 +432,7 @@ local function match_route(self, path, opts)
         end
 
         local idx = tonumber(ffi_cast('intptr_t', data_idx))
-        local routes = self.match_data[idx]
+        routes = self.match_data[idx]
         -- log_info("route: ", require("cjson").encode(routes))
         if routes then
             for _, route in ipairs(routes) do

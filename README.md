@@ -14,6 +14,7 @@ Table of Contents
 * [Methods](#methods)
     * [new](#new)
     * [match](#match)
+    * [dispatch](#dispatch)
 * [Install](#install)
 
 Status
@@ -67,7 +68,7 @@ The routes is a array table, like `{ {...}, {...}, {...} }`, Each element in the
 The attributes of each element may contain these:
 * `path`: client request uri, the default is a full match. But if the end of the path is `*`, it means that this is a prefix path. For example `/foo*`, it'll match `/foo/bar` or `/foo/glo/grey` etc.
 * `metadata`: Will return this field if using `rx:match` to match route.
-* `handler`: Will call this function using `rx:dipatch` to match route.
+* `handler`: Will call this function using `rx:dispatch` to match route.
 * `host`: optional, client request host, not only supports normal domain name, but also supports wildcard name, both `foo.com` and `*.foo.com` are valid.
 * `remote_addr`: optional, client remote address like `192.168.1.100`, and we can use CIDR format, eg `192.168.1.0/24`.
 * `methods`: optional, It's an array table, we can put one or more method names together. Here is the valid method name: "GET", "POST", "PUT", "DELETE", "PATCH", "HEAD", "OPTIONS".
@@ -108,7 +109,7 @@ dispatch
 Dispatchs the route by `method`, `path` and `host`, and call `handler` function if successful.
 
 ```lua
-local metadata = rx:match(ngx.var.uri, {...})
+local metadata = rx:dispatch(ngx.var.uri, {...})
 ```
 
 [Back to TOC](#table-of-contents)

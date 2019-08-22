@@ -1,18 +1,14 @@
 local ngx_null = ngx.null
 local tostring = tostring
-local byte = string.byte
-local gsub = string.gsub
-local sort = table.sort
-local pairs = pairs
-local ipairs = ipairs
-local concat = table.concat
+local gsub     = string.gsub
+local sort     = table.sort
+local pairs    = pairs
+local ipairs   = ipairs
+local concat   = table.concat
+local type     = type
+local new_tab  = require("table.new")
 
-local ok, new_tab = pcall(require, "table.new")
-if not ok then
-    new_tab = function (narr, nrec) return {} end
-end
-
-local _M = {}
+local _M = {version = 0.1}
 
 local metachars = {
     ['\t'] = '\\t',

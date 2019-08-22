@@ -20,7 +20,8 @@ local getmetatable=getmetatable
 local setmetatable=setmetatable
 local type        = type
 local error       = error
-local newproxy    = _G.newproxy
+local newproxy    = newproxy
+local tostring    = tostring
 local str_sub     = string.sub
 local sort_tab    = table.sort
 local cur_level   = ngx.config.subsystem == "http" and
@@ -315,7 +316,7 @@ end
 
 
 local function match_host(route_host_is_wildcard, route_host, request_host)
-    if #route_host > #request_host then
+    if type(request_host) ~= "string" or #route_host > #request_host then
         return false
     end
 
@@ -334,9 +335,11 @@ end
 
 local function match_route_opts(route, opts)
     local method = opts.method
-    if route.method ~= 0 and
-        bit.band(route.method, METHODS[method]) == 0 then
-        return false
+    if route.method ~= 0 then
+        if type(method) ~= "number" or
+           bit.band(route.method, METHODS[method]) == 0 then
+            return false
+        end
     end
 
     log_info("route.hosts: ", type(route.hosts))

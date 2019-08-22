@@ -46,9 +46,10 @@ Synopsys
             }
         })
 
-        ngx.say(rx:match("/aa", {host = ngx.var.host,
-                                 method = ngx.req_method(),
-                                 remote_addr = ngx.var.remote_addr}))
+        -- should hit
+        ngx.say(rx:match("/aa", {host = "foo.com",
+                                    method = "GET",
+                                    remote_addr = "127.0.0.1"}))
      }
  }
 ```

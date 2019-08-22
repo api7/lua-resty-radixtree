@@ -214,3 +214,54 @@ GET /t
 nil
 nil
 metadata /aa/bb/cc
+
+
+
+=== TEST 7: missing options when matching
+--- config
+    location /t {
+        content_by_lua_block {
+            local radix = require("resty.radixtree")
+            local rx = radix.new({
+                {
+                    path = "/aa",
+                    metadata = "metadata /aa",
+                    host = "foo.com",
+                    method = {"GET", "POST"},
+                    remote_addr = "127.0.0.1",
+                },
+                {
+                    path = "/bb*",
+                    metadata = "metadata /bb",
+                    host = {"*.bar.com", "gloo.com"},
+                    method = {"GET", "POST", "PUT"},
+                    remote_addr = "fe80:fe80::/64",
+                }
+            })
+
+            -- should hit
+            ngx.say(rx:match("/aa", {host = "foo.com",
+                                     method = "GET",
+                                     remote_addr = "127.0.0.1"}))
+
+            -- missing method
+            ngx.say(rx:match("/aa", {host = "foo.com",
+                                     remote_addr = "127.0.0.1"}))
+
+            -- missing host
+            ngx.say(rx:match("/aa", {method = "GET",
+                                     remote_addr = "127.0.0.1"}))
+
+            -- missing remote_addr
+            ngx.say(rx:match("/aa", {host = "foo.com",
+                                     method = "GET"}))
+        }
+    }
+--- request
+GET /t
+--- no_error_log
+[error]
+--- response_body
+metadata /aa
+nil
+nil

@@ -336,7 +336,7 @@ end
 local function match_route_opts(route, opts)
     local method = opts.method
     if route.method ~= 0 then
-        if type(method) ~= "number" or
+        if not method or type(METHODS[method]) ~= "number" or
            bit.band(route.method, METHODS[method]) == 0 then
             return false
         end

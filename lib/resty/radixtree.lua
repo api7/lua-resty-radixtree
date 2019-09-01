@@ -200,8 +200,8 @@ function _M.new(routes)
         end
 
         if route.uri_args then
-            if type(route.vars) ~= "table" or #route.vars % 2 ~= 0 then
-                error("invalid argument vars", 2)
+            if type(route.uri_args) ~= "table" or #route.uri_args % 2 ~= 0 then
+                error("invalid argument uri_args", 2)
             end
         end
 
@@ -427,7 +427,6 @@ local function match_route_opts(route, opts)
 
         for i = 1, #route.vars, 2 do
             local k, v = route.vars[i], route.vars[i + 1]
-            ngx.log(ngx.INFO, "k: ", k, " v: ", v, " var: ", opts.vars[k])
             if opts.vars[k] ~= v then
                 return false
             end

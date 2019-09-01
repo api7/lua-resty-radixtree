@@ -162,3 +162,30 @@ GET /t?k=v
 [error]
 --- response_body
 nil
+
+
+
+=== TEST 7: uri args + header + server_port (default to use ngx.var)
+--- config
+    location /t {
+        content_by_lua_block {
+            local radix = require("resty.radixtree")
+            local rx = radix.new({
+                {
+                    path = "/aa",
+                    metadata = "metadata /aa",
+                    vars = {"arg_k", "v",
+                            "host", "localhost",
+                            "server_port", "1984"},
+                }
+            })
+
+            ngx.say(rx:match("/aa", {}))
+        }
+    }
+--- request
+GET /t?k=v
+--- no_error_log
+[error]
+--- response_body
+metadata /aa

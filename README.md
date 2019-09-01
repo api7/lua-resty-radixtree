@@ -43,13 +43,15 @@ Synopsys
                 host = {"*.bar.com", "gloo.com"},
                 method = {"GET", "POST", "PUT"},
                 remote_addr = "fe80:fe80::/64",
+                vars = {"arg_k", "v"},
             }
         })
 
         -- should hit
         ngx.say(rx:match("/aa", {host = "foo.com",
-                                    method = "GET",
-                                    remote_addr = "127.0.0.1"}))
+                                 method = "GET",
+                                 remote_addr = "127.0.0.1",
+                                 vars = ngx.var}))
      }
  }
 ```
@@ -67,12 +69,15 @@ new
 The routes is a array table, like `{ {...}, {...}, {...} }`, Each element in the array is a route, which is a hash table.
 
 The attributes of each element may contain these:
-* `path`: client request uri, the default is a full match. But if the end of the path is `*`, it means that this is a prefix path. For example `/foo*`, it'll match `/foo/bar` or `/foo/glo/grey` etc.
-* `metadata`: Will return this field if using `rx:match` to match route.
-* `handler`: Will call this function using `rx:dispatch` to match route.
-* `host`: optional, client request host, not only supports normal domain name, but also supports wildcard name, both `foo.com` and `*.foo.com` are valid.
-* `remote_addr`: optional, client remote address like `192.168.1.100`, and we can use CIDR format, eg `192.168.1.0/24`.
-* `methods`: optional, It's an array table, we can put one or more method names together. Here is the valid method name: "GET", "POST", "PUT", "DELETE", "PATCH", "HEAD", "OPTIONS".
+|name       |option  |description|
+|--------   |--------|-----------|
+|path       |required|client request uri, the default is a full match. But if the end of the path is `*`, it means that this is a prefix path. For example `/foo*`, it'll match `/foo/bar` or `/foo/glo/grey` etc.|
+|metadata   |option  |Will return this field if using `rx:match` to match route.|
+|handler    |option  |Will call this function using `rx:dispatch` to match route.|
+|host       |option  |Client request host, not only supports normal domain name, but also supports wildcard name, both `foo.com` and `*.foo.com` are valid.|
+|remote_addr|option  |Client remote address like `192.168.1.100`, and we can use CIDR format, eg `192.168.1.0/24`.|
+|methods    |option  |It's an array table, we can put one or more method names together. Here is the valid method name: "GET", "POST", "PUT", "DELETE", "PATCH", "HEAD", "OPTIONS".|
+|vars       |option  |It is a non-empty array, each pair of elements, representing the name and value. eg: {var_name, expect_val, ...}|
 
 [Back to TOC](#table-of-contents)
 
@@ -87,6 +92,7 @@ match
     * `method`: optional, method name of client request.
     * `host`: optional, client request host, not only supports normal domain name, but also supports wildcard name, both `foo.com` and `*.foo.com` are valid.
     * `remote_addr`: optional, client remote address like `192.168.1.100`, and we can use CIDR format, eg `192.168.1.0/24`.
+    * `vars`: optional, a Lua table to fetch variable, default value is `ngx.var` to fetch Ningx builtin variable.
 
 Matchs the route by `method`, `path` and `host`, and return `metadata` if successful.
 
@@ -106,6 +112,7 @@ dispatch
     * `method`: optional, method name of client request.
     * `host`: optional, client request host, not only supports normal domain name, but also supports wildcard name, both `foo.com` and `*.foo.com` are valid.
     * `remote_addr`: optional, client remote address like `192.168.1.100`, and we can use CIDR format, eg `192.168.1.0/24`.
+    * `vars`: optional, a Lua table to fetch variable, default value is `ngx.var` to fetch Ningx builtin variable.
 
 Dispatchs the route by `method`, `path` and `host`, and call `handler` function if successful.
 

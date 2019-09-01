@@ -26,6 +26,7 @@ local str_sub     = string.sub
 local sort_tab    = table.sort
 local cur_level   = ngx.config.subsystem == "http" and
                     require "ngx.errlog" .get_sys_filter_level()
+local ngx_var     = ngx.var
 
 
 local function load_shared_lib(so_name)
@@ -421,13 +422,14 @@ local function match_route_opts(route, opts)
     end
 
     if route.vars then
-        if type(opts.vars) ~= "table" then
+        local vars = opts.vars or ngx_var
+        if type(vars) ~= "table" then
             return false
         end
 
         for i = 1, #route.vars, 2 do
             local k, v = route.vars[i], route.vars[i + 1]
-            if opts.vars[k] ~= v then
+            if vars[k] ~= v then
                 return false
             end
         end

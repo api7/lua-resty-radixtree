@@ -96,6 +96,7 @@ nil
             ngx.say(rx:match("/aa", {remote_addr = "::2"}))
             ngx.say(rx:match("/bb", {remote_addr = "::1"}))
             ngx.say(rx:match("/bb", {remote_addr = "::2"}))
+            ngx.say(rx:match("/aa", {remote_addr = "127.0.0.1"}))
         }
     }
 --- request
@@ -107,6 +108,7 @@ metadata /aa -> ::1
 nil
 nil
 metadata /aa -> ::2
+nil
 
 
 

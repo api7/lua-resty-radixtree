@@ -199,6 +199,18 @@ function _M.new(routes)
             error("missing argument metadata or handler", 2)
         end
 
+        if route.uri_args then
+            if type(route.uri_args) ~= "table" or #route.uri_args % 2 ~= 0 then
+                error("invalid argument uri_args", 2)
+            end
+        end
+
+        if route.vars then
+            if type(route.vars) ~= "table" or #route.vars % 2 ~= 0 then
+                error("invalid argument vars", 2)
+            end
+        end
+
         local method  = route.method
         local bit_methods
         if type(method) ~= "table" then
@@ -247,8 +259,10 @@ function _M.new(routes)
         route_opts.path = path
 
         route_opts.metadata = route.metadata
-        route_opts.handler = route.handler
-        route_opts.method  = bit_methods
+        route_opts.handler  = route.handler
+        route_opts.method   = bit_methods
+        route_opts.uri_args = route.uri_args
+        route_opts.vars     = route.vars
 
         if route.remote_addr then
             local remote_addr = route.remote_addr
@@ -388,6 +402,32 @@ local function match_route_opts(route, opts)
             local remote_addr_inet = ip_items[i - 1]
             if bit.rshift(remote_addrs[i * 2 - 1], route_addr_bits)
                 ~= bit.rshift(remote_addr_inet, route_addr_bits) then
+                return false
+            end
+        end
+    end
+
+    if route.uri_args then
+        if type(opts.uri_args) ~= "table" then
+            return false
+        end
+
+        for i = 1, #route.uri_args, 2 do
+            local k, v = route.uri_args[i], route.uri_args[i + 1]
+            if opts.uri_args[k] ~= v then
+                return false
+            end
+        end
+    end
+
+    if route.vars then
+        if type(opts.vars) ~= "table" then
+            return false
+        end
+
+        for i = 1, #route.vars, 2 do
+            local k, v = route.vars[i], route.vars[i + 1]
+            if opts.vars[k] ~= v then
                 return false
             end
         end

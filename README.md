@@ -69,6 +69,7 @@ new
 The routes is a array table, like `{ {...}, {...}, {...} }`, Each element in the array is a route, which is a hash table.
 
 The attributes of each element may contain these:
+
 |name       |option  |description|
 |--------   |--------|-----------|
 |path       |required|client request uri, the default is a full match. But if the end of the path is `*`, it means that this is a prefix path. For example `/foo*`, it'll match `/foo/bar` or `/foo/glo/grey` etc.|

@@ -373,6 +373,9 @@ local compare_funcs = {
 
 local function compare_val(l_v, op, r_v)
     local com_fun = compare_funcs[op or "=="]
+    if not com_fun then
+        return false
+    end
     return com_fun(l_v, r_v)
 end
 

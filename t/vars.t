@@ -287,7 +287,7 @@ metadata /aa
 
 
 
-=== TEST 10: argument `a` > 10
+=== TEST 11: argument `a` > 10
 --- config
     location /t {
         content_by_lua_block {
@@ -298,6 +298,33 @@ metadata /aa
                     metadata = "metadata /aa",
                     vars = {
                         {"arg_k", ">", 10},
+                    },
+                }
+            })
+
+            ngx.say(rx:match("/aa", {vars = ngx.var}))
+        }
+    }
+--- request
+GET /t?k=9
+--- no_error_log
+[error]
+--- response_body
+nil
+
+
+
+=== TEST 12: invalid operator
+--- config
+    location /t {
+        content_by_lua_block {
+            local radix = require("resty.radixtree")
+            local rx = radix.new({
+                {
+                    path = "/aa",
+                    metadata = "metadata /aa",
+                    vars = {
+                        {"arg_k", "invalid", 10},
                     },
                 }
             })

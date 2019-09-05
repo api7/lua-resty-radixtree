@@ -121,7 +121,7 @@ dispatch
 Dispatchs the route by `method`, `path` and `host`, and call `handler` function if successful.
 
 ```lua
-local metadata = rx:dispatch(ngx.var.uri, {...})
+local ok = rx:dispatch(ngx.var.uri, {...})
 ```
 
 [Back to TOC](#table-of-contents)

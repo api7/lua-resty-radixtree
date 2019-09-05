@@ -44,13 +44,14 @@ Synopsys
                 method = {"GET", "POST", "PUT"},
                 remote_addr = "fe80:fe80::/64",
                 vars = {
-                    {"arg_key", "==", "val"},
+                    {"arg_name", "==", "json"},
+                    {"arg_weight", ">", "10"},
                 },
             }
         })
 
         -- try to match
-        ngx.say(rx:match("/aa?key=val", {host = "foo.com",
+        ngx.say(rx:match("/aa", {host = "foo.com",
                                  method = "GET",
                                  remote_addr = "127.0.0.1",
                                  vars = ngx.var}))

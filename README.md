@@ -43,12 +43,14 @@ Synopsys
                 host = {"*.bar.com", "gloo.com"},
                 method = {"GET", "POST", "PUT"},
                 remote_addr = "fe80:fe80::/64",
-                vars = {"arg_k", "v"},
+                vars = {
+                    {"arg_key", "==", "val"},
+                },
             }
         })
 
-        -- should hit
-        ngx.say(rx:match("/aa", {host = "foo.com",
+        -- try to match
+        ngx.say(rx:match("/aa?key=val", {host = "foo.com",
                                  method = "GET",
                                  remote_addr = "127.0.0.1",
                                  vars = ngx.var}))
@@ -78,7 +80,7 @@ The attributes of each element may contain these:
 |host       |option  |Client request host, not only supports normal domain name, but also supports wildcard name, both `foo.com` and `*.foo.com` are valid.|
 |remote_addr|option  |Client remote address like `192.168.1.100`, and we can use CIDR format, eg `192.168.1.0/24`.|
 |methods    |option  |It's an array table, we can put one or more method names together. Here is the valid method name: "GET", "POST", "PUT", "DELETE", "PATCH", "HEAD", "OPTIONS".|
-|vars       |option  |It is a non-empty array, each pair of elements, representing the name and value. eg: {var_name, expect_val, ...}|
+|vars       |option  |It is an array of one or more {var, operator, val} elements. For example: {{var, operator, val}, {var, operator, val}, ...}. `{"arg_key", "==", "val"}` means the value of argument `key` expect to `val`.|
 
 [Back to TOC](#table-of-contents)
 

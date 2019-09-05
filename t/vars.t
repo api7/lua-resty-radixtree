@@ -338,3 +338,71 @@ GET /t?k=9
 [error]
 --- response_body
 nil
+
+
+
+=== TEST 13: uri args
+--- config
+    location /t {
+        content_by_lua_block {
+            local radix = require("resty.radixtree")
+            local rx = radix.new({
+                {
+                    path = "/aa",
+                    metadata = "metadata /aa",
+                    vars = {
+                        {"arg_k", "v"},
+                    },
+                },
+                {
+                    path = "/aa",
+                    metadata = "metadata /aa2",
+                    vars = {
+                        {"arg_k", "~=", "not hit"},
+                    },
+                },
+            })
+
+            ngx.say(rx:match("/aa", {vars = ngx.var}))
+        }
+    }
+--- request
+GET /t?k=v
+--- no_error_log
+[error]
+--- response_body
+metadata /aa
+
+
+
+=== TEST 14: uri args
+--- config
+    location /t {
+        content_by_lua_block {
+            local radix = require("resty.radixtree")
+            local rx = radix.new({
+                {
+                    path = "/aa",
+                    metadata = "metadata /aa",
+                    vars = {
+                        {"arg_k", "v"},
+                    },
+                },
+                {
+                    path = "/aa",
+                    metadata = "metadata /aa2",
+                    vars = {
+                        {"arg_k", "~=", "not hit"},
+                    },
+                },
+            })
+
+            ngx.say(rx:match("/aa", {vars = ngx.var}))
+        }
+    }
+--- request
+GET /t?k=xxxx
+--- no_error_log
+[error]
+--- response_body
+metadata /aa2

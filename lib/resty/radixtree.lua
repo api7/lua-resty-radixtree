@@ -207,7 +207,7 @@ function _M.new(routes)
         end
 
         if route.vars then
-            if type(route.vars) ~= "table" or #route.vars % 2 ~= 0 then
+            if type(route.vars) ~= "table" then
                 error("invalid argument vars", 2)
             end
         end
@@ -347,6 +347,38 @@ local function match_host(route_host_is_wildcard, route_host, request_host)
     return true
 end
 
+local compare_funcs = {
+    ["=="] = function (l_v, r_v)
+        if type(r_v) == "number" then
+            return tonumber(l_v) == r_v
+        end
+        return l_v == r_v
+    end,
+    ["~="] = function (l_v, r_v)
+        return l_v ~= r_v
+    end,
+    [">"] = function (l_v, r_v)
+        if type(r_v) == "number" then
+            return tonumber(l_v) > r_v
+        end
+        return l_v > r_v
+    end,
+    ["<"] = function (l_v, r_v)
+        if type(r_v) == "number" then
+            return tonumber(l_v) < r_v
+        end
+        return l_v < r_v
+    end,
+}
+
+local function compare_val(l_v, op, r_v)
+    local com_fun = compare_funcs[op or "=="]
+    if not com_fun then
+        return false
+    end
+    return com_fun(l_v, r_v)
+end
+
 
 local function match_route_opts(route, opts)
     local method = opts.method
@@ -427,9 +459,18 @@ local function match_route_opts(route, opts)
             return false
         end
 
-        for i = 1, #route.vars, 2 do
-            local k, v = route.vars[i], route.vars[i + 1]
-            if vars[k] ~= v then
+        for _, route_var in ipairs(route.vars) do
+            local l_v, op, r_v
+            if #route_var == 2 then
+                l_v, r_v = route_var[1], route_var[2]
+                op = "=="
+            else
+                l_v, op, r_v = route_var[1], route_var[2], route_var[3]
+            end
+            l_v = vars[l_v]
+
+            -- ngx.log(ngx.INFO, l_v, op, r_v)
+            if not compare_val(l_v, op, r_v) then
                 return false
             end
         end

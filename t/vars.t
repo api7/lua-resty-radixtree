@@ -16,7 +16,9 @@ __DATA__
                 {
                     path = "/aa",
                     metadata = "metadata /aa",
-                    vars = {"arg_k", "v"},
+                    vars = {
+                        {"arg_k", "v"},
+                    },
                 }
             })
 
@@ -41,7 +43,9 @@ metadata /aa
                 {
                     path = "/aa",
                     metadata = "metadata /aa",
-                    vars = {"arg_k", "v"},
+                    vars = {
+                        {"arg_k", "v"},
+                    },
                 }
             })
 
@@ -66,7 +70,9 @@ nil
                 {
                     path = "/aa",
                     metadata = "metadata /aa",
-                    vars = {"http_test", "v"},
+                    vars = {
+                        {"http_test", "v"},
+                    }
                 }
             })
 
@@ -93,7 +99,9 @@ metadata /aa
                 {
                     path = "/aa",
                     metadata = "metadata /aa",
-                    vars = {"http_test", "v"},
+                    vars = {
+                        {"http_test", "v"},
+                    }
                 }
             })
 
@@ -120,9 +128,11 @@ nil
                 {
                     path = "/aa",
                     metadata = "metadata /aa",
-                    vars = {"arg_k", "v",
-                            "host", "localhost",
-                            "server_port", "1984"},
+                    vars = {
+                        {"arg_k", "v"},
+                        {"host", "localhost"},
+                        {"server_port", "1984"},
+                    }
                 }
             })
 
@@ -147,9 +157,11 @@ metadata /aa
                 {
                     path = "/aa",
                     metadata = "metadata /aa",
-                    vars = {"arg_k", "v",
-                            "host", "localhost",
-                            "server_port", "1984-not"},
+                    vars = {
+                        {"arg_k", "v"},
+                        {"host", "localhost"},
+                        {"server_port", "1984-not"},
+                    }
                 }
             })
 
@@ -174,9 +186,11 @@ nil
                 {
                     path = "/aa",
                     metadata = "metadata /aa",
-                    vars = {"arg_k", "v",
-                            "host", "localhost",
-                            "server_port", "1984"},
+                    vars = {
+                        {"arg_k", "v"},
+                        {"host", "localhost"},
+                        {"server_port", "1984"},
+                    }
                 }
             })
 
@@ -189,3 +203,138 @@ GET /t?k=v
 [error]
 --- response_body
 metadata /aa
+
+
+
+=== TEST 8: ~=: not hit
+--- config
+    location /t {
+        content_by_lua_block {
+            local radix = require("resty.radixtree")
+            local rx = radix.new({
+                {
+                    path = "/aa",
+                    metadata = "metadata /aa",
+                    vars = {
+                        {"arg_k", "~=", "v"},
+                    },
+                }
+            })
+
+            ngx.say(rx:match("/aa", {vars = ngx.var}))
+        }
+    }
+--- request
+GET /t?k=v
+--- no_error_log
+[error]
+--- response_body
+nil
+
+
+
+=== TEST 9: ~=: hit
+--- config
+    location /t {
+        content_by_lua_block {
+            local radix = require("resty.radixtree")
+            local rx = radix.new({
+                {
+                    path = "/aa",
+                    metadata = "metadata /aa",
+                    vars = {
+                        {"arg_k", "~=", "************"},
+                    },
+                }
+            })
+
+            ngx.say(rx:match("/aa", {vars = ngx.var}))
+        }
+    }
+--- request
+GET /t?k=v
+--- no_error_log
+[error]
+--- response_body
+metadata /aa
+
+
+
+=== TEST 10: argument `a` > 10
+--- config
+    location /t {
+        content_by_lua_block {
+            local radix = require("resty.radixtree")
+            local rx = radix.new({
+                {
+                    path = "/aa",
+                    metadata = "metadata /aa",
+                    vars = {
+                        {"arg_k", ">", 10},
+                    },
+                }
+            })
+
+            ngx.say(rx:match("/aa", {vars = ngx.var}))
+        }
+    }
+--- request
+GET /t?k=11
+--- no_error_log
+[error]
+--- response_body
+metadata /aa
+
+
+
+=== TEST 11: argument `a` > 10
+--- config
+    location /t {
+        content_by_lua_block {
+            local radix = require("resty.radixtree")
+            local rx = radix.new({
+                {
+                    path = "/aa",
+                    metadata = "metadata /aa",
+                    vars = {
+                        {"arg_k", ">", 10},
+                    },
+                }
+            })
+
+            ngx.say(rx:match("/aa", {vars = ngx.var}))
+        }
+    }
+--- request
+GET /t?k=9
+--- no_error_log
+[error]
+--- response_body
+nil
+
+
+
+=== TEST 12: invalid operator
+--- config
+    location /t {
+        content_by_lua_block {
+            local radix = require("resty.radixtree")
+            local rx = radix.new({
+                {
+                    path = "/aa",
+                    metadata = "metadata /aa",
+                    vars = {
+                        {"arg_k", "invalid", 10},
+                    },
+                }
+            })
+
+            ngx.say(rx:match("/aa", {vars = ngx.var}))
+        }
+    }
+--- request
+GET /t?k=9
+--- no_error_log
+[error]
+--- response_body
+nil

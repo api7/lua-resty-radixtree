@@ -383,23 +383,6 @@ local function match_route_opts(route, opts)
         end
     end
 
-    log_info("route.hosts: ", type(route.hosts))
-    if route.hosts then
-        local matched = false
-        local hosts = route.hosts
-        for i = 1, #route.hosts, 2 do
-            if match_host(hosts[i], hosts[i + 1], opts.host) then
-                matched = true
-                break
-            end
-        end
-
-        log_info("hosts match: ", matched)
-        if not matched then
-            return false
-        end
-    end
-
     local remote_addrs = route.remote_addrs
     if remote_addrs and #remote_addrs == 2 then
         if radix.is_valid_ipv4(opts.remote_addr) ~= 0 then
@@ -431,6 +414,23 @@ local function match_route_opts(route, opts)
                 ~= bit.rshift(remote_addr_inet, route_addr_bits) then
                 return false
             end
+        end
+    end
+
+    log_info("route.hosts: ", type(route.hosts))
+    if route.hosts then
+        local matched = false
+        local hosts = route.hosts
+        for i = 1, #route.hosts, 2 do
+            if match_host(hosts[i], hosts[i + 1], opts.host) then
+                matched = true
+                break
+            end
+        end
+
+        log_info("hosts match: ", matched)
+        if not matched then
+            return false
         end
     end
 

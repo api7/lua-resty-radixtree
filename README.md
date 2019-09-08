@@ -47,6 +47,9 @@ Synopsys
                     {"arg_name", "==", "json"},
                     {"arg_weight", ">", "10"},
                 },
+                filter_fun = function(vars)
+                    return vars["arg_name"] == "json"
+                end,
             }
         })
 
@@ -82,6 +85,7 @@ The attributes of each element may contain these:
 |remote_addr|option  |Client remote address like `192.168.1.100`, and we can use CIDR format, eg `192.168.1.0/24`.|
 |methods    |option  |It's an array table, we can put one or more method names together. Here is the valid method name: "GET", "POST", "PUT", "DELETE", "PATCH", "HEAD", "OPTIONS".|
 |vars       |option  |It is an array of one or more {var, operator, val} elements. For example: {{var, operator, val}, {var, operator, val}, ...}. `{"arg_key", "==", "val"}` means the value of argument `key` expect to `val`.|
+|filter_fun |option  |User defined filter function, We can use it to achieve matching logic for special scenes. `radixtree` will only pass one parameter which named `vars` when matching route.|
 
 [Back to TOC](#table-of-contents)
 

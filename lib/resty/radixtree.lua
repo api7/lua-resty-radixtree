@@ -430,8 +430,12 @@ local function match_route_opts(route, opts)
         for _, inet_addrs in ipairs(remote_addrs) do
             if #inet_addrs == 2 and is_ipv4 then
                 local route_addr_bits = 32 - inet_addrs[2]
-                if bit.rshift(inet_addrs[1], route_addr_bits)
-                    == bit.rshift(remote_addr_inet, route_addr_bits) then
+                if route_addr_bits == 32 then
+                    matched = true
+                    break
+
+                elseif bit.rshift(inet_addrs[1], route_addr_bits)
+                        == bit.rshift(remote_addr_inet, route_addr_bits) then
                     matched = true
                     break
                 end
@@ -441,9 +445,10 @@ local function match_route_opts(route, opts)
                 local matched_ipv6 = true
                 for i = 1, 4 do
                     local route_addr_bits = 32 - inet_addrs[i * 2]
-                    if bit.rshift(inet_addrs[i * 2 - 1], route_addr_bits)
-                        ~= bit.rshift(remote_addr_inet[i - 1],
-                                      route_addr_bits) then
+                    if route_addr_bits ~= 32
+                       and bit.rshift(inet_addrs[i * 2 - 1], route_addr_bits)
+                            ~= bit.rshift(remote_addr_inet[i - 1],
+                                          route_addr_bits) then
                         matched_ipv6 = false
                         break
                     end

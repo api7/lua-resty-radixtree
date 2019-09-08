@@ -322,7 +322,8 @@ function _M.new(routes)
         route_opts.vars     = route.vars
         route_opts.filter_fun   = route.filter_fun
         route_opts.remote_addrs = parse_remote_addr(route.remote_addr)
-        ngx.log(ngx.WARN, "remote addr: ", require("cjson").encode(route_opts.remote_addrs))
+        -- lof_info("remote addr: ",
+        --          require("cjson").encode(route_opts.remote_addrs))
 
         insert_route(self, route_opts)
     end

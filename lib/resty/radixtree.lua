@@ -264,6 +264,7 @@ function _M.new(routes)
         route_opts.method   = bit_methods
         route_opts.uri_args = route.uri_args
         route_opts.vars     = route.vars
+        route_opts.filter_fun = route.filter_fun
 
         if route.remote_addr then
             local remote_addr = route.remote_addr
@@ -473,6 +474,12 @@ local function match_route_opts(route, opts)
             if not compare_val(l_v, op, r_v) then
                 return false
             end
+        end
+    end
+
+    if route.filter_fun then
+        if not route.filter_fun(opts.vars or ngx_var) then
+            return false
         end
     end
 

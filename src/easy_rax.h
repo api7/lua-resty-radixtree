@@ -39,10 +39,6 @@ void *radix_tree_pcre(void *it, const unsigned char *buf, size_t len);
 void *radix_tree_next(void *it, const unsigned char *buf, size_t len);
 int radix_tree_stop(void *it);
 
-int is_valid_ipv4(const char *ipv4);
-int is_valid_ipv6(const char *ipv6);
-int parse_ipv6(const char *ipv6, unsigned int *addr_32);
-
 #ifdef __cplusplus
 }
 #endif

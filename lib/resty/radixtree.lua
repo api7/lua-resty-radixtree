@@ -1,5 +1,5 @@
 -- Copyright (C) Yuansheng Wang
-
+local ipmatcher   = require("resty.ipmatcher")
 local base        = require("resty.core.base")
 local clear_tab   = require("table.clear")
 local clone_tab   = require("table.clone")
@@ -81,12 +81,6 @@ ffi_cdef[[
     void *radix_tree_pcre(void *it, const unsigned char *buf, size_t len);
     void *radix_tree_next(void *it, const unsigned char *buf, size_t len);
     int radix_tree_stop(void *it);
-
-    unsigned int inet_network(const char *cp);
-
-    int is_valid_ipv4(const char *ipv4);
-    int is_valid_ipv6(const char *ipv6);
-    int parse_ipv6(const char *ipv6, int *addr_items);
 ]]
 
 
@@ -182,56 +176,12 @@ local function parse_remote_addr(route_remote_addrs)
         route_remote_addrs = {route_remote_addrs}
     end
 
-    local inet_addrs = {}
-
-    for _, ip_addr_org in ipairs(route_remote_addrs) do
-        local ip_addr = ip_addr_org
-        local idx = find_str(ip_addr_org, "/", 1, true)
-        local inet_addrs_bits
-
-        if idx then
-            ip_addr  = str_sub(ip_addr_org, 1, idx - 1)
-            inet_addrs_bits = str_sub(ip_addr_org, idx + 1)
-            inet_addrs_bits = tonumber(inet_addrs_bits)
-        end
-
-        if radix.is_valid_ipv4(ip_addr) == 0 then
-            insert_tab(inet_addrs, {
-                radix.inet_network(ip_addr),
-                inet_addrs_bits or 32,
-            })
-
-        elseif radix.is_valid_ipv6(ip_addr) == 0 then
-            local ip_items = ffi_new("unsigned int [4]")
-            local ret = radix.parse_ipv6(ip_addr, ip_items)
-            if ret ~= 0 then
-                error("failed to parse ipv6 address: " .. ip_addr)
-            end
-
-            local parsed_ipv6_addr = new_tab(4, 0)
-            inet_addrs_bits = inet_addrs_bits or 128
-            for j = 1, 4 do
-                insert_tab(parsed_ipv6_addr, ip_items[j - 1])
-
-                if inet_addrs_bits >= 32 then
-                    insert_tab(parsed_ipv6_addr, 32)
-                elseif inet_addrs_bits > 0 then
-                    insert_tab(parsed_ipv6_addr, inet_addrs_bits)
-                else
-                    insert_tab(parsed_ipv6_addr, 0)
-                end
-
-                inet_addrs_bits = inet_addrs_bits - 32
-            end
-
-            insert_tab(inet_addrs, parsed_ipv6_addr)
-
-        else
-            error("invalid ip address: " .. ip_addr)
-        end
+    local ip_ins, err = ipmatcher.new(route_remote_addrs)
+    if not ip_ins then
+        return nil, err
     end
 
-    return inet_addrs
+    return ip_ins
 end
 
 
@@ -321,9 +271,12 @@ function _M.new(routes)
         route_opts.method   = bit_methods
         route_opts.vars     = route.vars
         route_opts.filter_fun   = route.filter_fun
-        route_opts.remote_addrs = parse_remote_addr(route.remote_addr)
-        -- lof_info("remote addr: ",
-        --          require("cjson").encode(route_opts.remote_addrs))
+
+        local err
+        route_opts.matcher_ins, err = parse_remote_addr(route.remote_addr)
+        if err then
+            error("invalid IP address: " .. err, 2)
+        end
 
         insert_route(self, route_opts)
     end
@@ -404,65 +357,14 @@ local function match_route_opts(route, opts)
         end
     end
 
-    local remote_addrs = route.remote_addrs
-    if remote_addrs then
-        local matched = false
-        local opt_remote_addr = opts.remote_addr
-        local is_ipv4 = radix.is_valid_ipv4(opt_remote_addr) == 0
-        local is_ipv6
-        local remote_addr_inet
-        if is_ipv4 then
-            remote_addr_inet = radix.inet_network(opt_remote_addr)
-        else
-            is_ipv6 = radix.is_valid_ipv6(opt_remote_addr) == 0
+    local matcher_ins = route.matcher_ins
+    if matcher_ins then
+        local ok, err = matcher_ins:match(opts.remote_addr)
+        if err then
+            log_info("failed to match ip: ", err)
+            return false
         end
-
-        if is_ipv6 then
-            remote_addr_inet = ffi_new("unsigned int[4]")
-            local ret = radix.parse_ipv6(opt_remote_addr, remote_addr_inet)
-            if ret ~= 0 then
-                error("failed to parse ipv6 address: " .. opt_remote_addr)
-            end
-        end
-
-        -- ngx.log(ngx.WARN, "is_ipv4: ", is_ipv4)
-        -- ngx.log(ngx.WARN, "is_ipv6: ", is_ipv6)
-
-        for _, inet_addrs in ipairs(remote_addrs) do
-            if #inet_addrs == 2 and is_ipv4 then
-                local route_addr_bits = 32 - inet_addrs[2]
-                if route_addr_bits == 32 then
-                    matched = true
-                    break
-
-                elseif bit.rshift(inet_addrs[1], route_addr_bits)
-                        == bit.rshift(remote_addr_inet, route_addr_bits) then
-                    matched = true
-                    break
-                end
-            end
-
-            if #inet_addrs == 8 and is_ipv6 then
-                local matched_ipv6 = true
-                for i = 1, 4 do
-                    local route_addr_bits = 32 - inet_addrs[i * 2]
-                    if route_addr_bits ~= 32
-                       and bit.rshift(inet_addrs[i * 2 - 1], route_addr_bits)
-                            ~= bit.rshift(remote_addr_inet[i - 1],
-                                          route_addr_bits) then
-                        matched_ipv6 = false
-                        break
-                    end
-                end
-
-                if matched_ipv6 then
-                    matched = true
-                    break
-                end
-            end
-        end
-
-        if not matched then
+        if not ok then
             return false
         end
     end

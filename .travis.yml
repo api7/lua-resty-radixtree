@@ -34,5 +34,5 @@ install:
 script:
   - export PATH=$OPENRESTY_PREFIX/nginx/sbin:$PATH
   - make compile > build.log 2>&1 || (cat build.log && exit 1)
-  - make dev > build.log 2>&1 || (cat build.log && exit 1)
+  - sudo make dev > build.log 2>&1 || (cat build.log && exit 1)
   - prove -Itest-nginx/lib -r t

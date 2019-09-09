@@ -13,6 +13,7 @@ addons:
       - libreadline-dev
       - libssl-dev
       - perl
+      - luarocks
 
 env:
   global:

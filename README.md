@@ -5,6 +5,8 @@ This is Lua-Openresty implementation library base on FFI for [rax](https://githu
 [![Build Status](https://travis-ci.org/iresty/lua-resty-radixtree.svg?branch=master)](https://travis-ci.org/iresty/lua-resty-radixtree)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://github.com/iresty/lua-resty-radixtree/blob/master/LICENSE)
 
+This project depends on [lua-resty-ipmatcher](https://github.com/iresty/lua-resty-ipmatcher).
+
 Table of Contents
 =================
 
@@ -16,6 +18,7 @@ Table of Contents
     * [match](#match)
     * [dispatch](#dispatch)
 * [Install](#install)
+* [DEV ENV](#dev-env)
 
 Status
 ======
@@ -50,7 +53,13 @@ Synopsys
                 filter_fun = function(vars)
                     return vars["arg_name"] == "json"
                 end,
-            }
+            },
+            {
+                path = "/cc",
+                metadata = "metadata /cc",
+                remote_addr = {"127.0.0.1","192.168.0.0/16",
+                               "::1", "fe80::/32"}
+            },
         })
 
         -- try to match
@@ -82,7 +91,7 @@ The attributes of each element may contain these:
 |metadata   |option  |Will return this field if using `rx:match` to match route.|
 |handler    |option  |Will call this function using `rx:dispatch` to match route.|
 |host       |option  |Client request host, not only supports normal domain name, but also supports wildcard name, both `foo.com` and `*.foo.com` are valid.|
-|remote_addr|option  |Client remote address like `192.168.1.100`, and we can use CIDR format, eg `192.168.1.0/24`.|
+|remote_addr|option  |Client remote address like `192.168.1.100`, and we can use CIDR format, eg `192.168.1.0/24`. BTW, In addition to supporting the IPv6 format, multiple IP addresses are allowed, this field will be an array table at this case, the elements of array shoud be a string IPv4 or IPv6 address.|
 |methods    |option  |It's an array table, we can put one or more method names together. Here is the valid method name: "GET", "POST", "PUT", "DELETE", "PATCH", "HEAD", "OPTIONS".|
 |vars       |option  |It is an array of one or more {var, operator, val} elements. For example: {{var, operator, val}, {var, operator, val}, ...}. `{"arg_key", "==", "val"}` means the value of argument `key` expect to `val`.|
 |filter_fun |option  |User defined filter function, We can use it to achieve matching logic for special scenes. `radixtree` will only pass one parameter which named `vars` when matching route.|
@@ -137,4 +146,17 @@ Install
 
 ```
 make install
+```
+
+[Back to TOC](#table-of-contents)
+
+
+DEV ENV
+=======
+
+
+### Install Dependencies
+
+```
+make dev
 ```

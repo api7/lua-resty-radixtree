@@ -20,7 +20,7 @@ __DATA__
                 },
                 {
                     path = "/bb",
-                    metadata = "metadata /aa -> 127.0.0.2",
+                    metadata = "metadata /bb -> 127.0.0.2",
                     remote_addr = "127.0.0.2",
                 }
             })
@@ -39,7 +39,7 @@ GET /t
 metadata /aa -> 127.0.0.1
 nil
 nil
-metadata /aa -> 127.0.0.2
+metadata /bb -> 127.0.0.2
 
 
 
@@ -139,4 +139,126 @@ GET /t
 nil
 metadata /aa -> fe80::1/64
 nil
+nil
+
+
+
+=== TEST 5: multiple ipv4 address
+--- config
+    location /t {
+        content_by_lua_block {
+            local radix = require("resty.radixtree")
+            local rx = radix.new({
+                {
+                    path = "/aa",
+                    metadata = "metadata /aa",
+                    remote_addr = {"127.0.0.1", "127.0.0.3"},
+                },
+                {
+                    path = "/bb",
+                    metadata = "metadata /bb",
+                    remote_addr = {"127.0.0.2", "127.0.0.3"},
+                }
+            })
+
+            ngx.say(rx:match("/aa", {remote_addr = "127.0.0.1"}))
+            ngx.say(rx:match("/aa", {remote_addr = "127.0.0.2"}))
+            ngx.say(rx:match("/aa", {remote_addr = "127.0.0.3"}))
+            ngx.say(rx:match("/bb", {remote_addr = "127.0.0.1"}))
+            ngx.say(rx:match("/bb", {remote_addr = "127.0.0.2"}))
+            ngx.say(rx:match("/bb", {remote_addr = "127.0.0.3"}))
+        }
+    }
+--- request
+GET /t
+--- no_error_log
+[error]
+--- response_body
+metadata /aa
+nil
+metadata /aa
+nil
+metadata /bb
+metadata /bb
+
+
+
+=== TEST 6: multiple ipv6 address
+--- config
+    location /t {
+        content_by_lua_block {
+            local radix = require("resty.radixtree")
+            local rx = radix.new({
+                {
+                    path = "/aa",
+                    metadata = "metadata /aa",
+                    remote_addr = {"::1", "::3"},
+                },
+                {
+                    path = "/bb",
+                    metadata = "metadata /bb",
+                    remote_addr = {"::2", "::3"},
+                }
+            })
+
+            ngx.say(rx:match("/aa", {remote_addr = "::1"}))
+            ngx.say(rx:match("/aa", {remote_addr = "::2"}))
+            ngx.say(rx:match("/aa", {remote_addr = "::3"}))
+            ngx.say(rx:match("/bb", {remote_addr = "::1"}))
+            ngx.say(rx:match("/bb", {remote_addr = "::2"}))
+            ngx.say(rx:match("/bb", {remote_addr = "::3"}))
+            ngx.say(rx:match("/aa", {remote_addr = "127.0.0.1"}))
+        }
+    }
+--- request
+GET /t
+--- no_error_log
+[error]
+--- response_body
+metadata /aa
+nil
+metadata /aa
+nil
+metadata /bb
+metadata /bb
+nil
+
+
+
+=== TEST 7: multiple ip address: v4 + v6
+--- config
+    location /t {
+        content_by_lua_block {
+            local radix = require("resty.radixtree")
+            local rx = radix.new({
+                {
+                    path = "/aa",
+                    metadata = "metadata /aa",
+                    remote_addr = {"127.0.0.1", "127.0.0.3", "::1", "::2",
+                                   "192.168.0.0/16", "fe80::/16"},
+                }
+            })
+
+            ngx.say(rx:match("/aa", {remote_addr = "127.0.0.1"}))
+            ngx.say(rx:match("/aa", {remote_addr = "127.0.0.2"}))
+            ngx.say(rx:match("/aa", {remote_addr = "::2"}))
+            ngx.say(rx:match("/aa", {remote_addr = "::3"}))
+            ngx.say(rx:match("/aa", {remote_addr = "192.168.1.1"}))
+            ngx.say(rx:match("/aa", {remote_addr = "192.138.1.1"}))
+            ngx.say(rx:match("/aa", {remote_addr = "fe80::1"}))
+            ngx.say(rx:match("/aa", {remote_addr = "fe81::1"}))
+        }
+    }
+--- request
+GET /t
+--- no_error_log
+[error]
+--- response_body
+metadata /aa
+nil
+metadata /aa
+nil
+metadata /aa
+nil
+metadata /aa
 nil

@@ -1,5 +1,5 @@
 -- Copyright (C) Yuansheng Wang
-
+local ipmatcher   = require("resty.ipmatcher")
 local base        = require("resty.core.base")
 local clear_tab   = require("table.clear")
 local clone_tab   = require("table.clone")
@@ -81,12 +81,6 @@ ffi_cdef[[
     void *radix_tree_pcre(void *it, const unsigned char *buf, size_t len);
     void *radix_tree_next(void *it, const unsigned char *buf, size_t len);
     int radix_tree_stop(void *it);
-
-    unsigned int inet_network(const char *cp);
-
-    int is_valid_ipv4(const char *ipv4);
-    int is_valid_ipv6(const char *ipv6);
-    int parse_ipv6(const char *ipv6, int *addr_items);
 ]]
 
 
@@ -171,6 +165,25 @@ local function insert_route(self, opts)
     log_info("insert route path: ", path, " dataprt: ", tostring(dataptr))
     return true
 end
+
+
+local function parse_remote_addr(route_remote_addrs)
+    if not route_remote_addrs then
+        return
+    end
+
+    if type(route_remote_addrs) == "string" then
+        route_remote_addrs = {route_remote_addrs}
+    end
+
+    local ip_ins, err = ipmatcher.new(route_remote_addrs)
+    if not ip_ins then
+        return nil, err
+    end
+
+    return ip_ins
+end
+
 
 do
     local route_opts = {}
@@ -257,51 +270,12 @@ function _M.new(routes)
         route_opts.handler  = route.handler
         route_opts.method   = bit_methods
         route_opts.vars     = route.vars
-        route_opts.filter_fun = route.filter_fun
+        route_opts.filter_fun   = route.filter_fun
 
-        if route.remote_addr then
-            local remote_addr = route.remote_addr
-            local remote_addr_bits
-
-            local idx = find_str(remote_addr, "/", 1, true)
-            if idx then
-                remote_addr  = str_sub(remote_addr, 1, idx - 1)
-                remote_addr_bits = str_sub(route.remote_addr, idx + 1)
-                remote_addr_bits = tonumber(remote_addr_bits)
-            end
-
-            if radix.is_valid_ipv4(remote_addr) == 0 then
-                route_opts.remote_addrs = {
-                    radix.inet_network(remote_addr),
-                    remote_addr_bits or 32,
-                }
-
-            elseif radix.is_valid_ipv6(remote_addr) == 0 then
-                local ip_items = ffi_new("unsigned int [4]")
-                local ret = radix.parse_ipv6(remote_addr, ip_items)
-                if ret ~= 0 then
-                    error("failed to parse ipv6 address: " .. remote_addr)
-                end
-
-                route_opts.remote_addrs = new_tab(4, 0)
-                remote_addr_bits = remote_addr_bits or 128
-                for j = 1, 4 do
-                    insert_tab(route_opts.remote_addrs, ip_items[j - 1])
-
-                    if remote_addr_bits >= 32 then
-                        insert_tab(route_opts.remote_addrs, 32)
-                    elseif remote_addr_bits > 0 then
-                        insert_tab(route_opts.remote_addrs, remote_addr_bits)
-                    else
-                        insert_tab(route_opts.remote_addrs, 0)
-                    end
-
-                    remote_addr_bits = remote_addr_bits - 32
-                end
-
-            else
-                error("invalid ip address: " .. remote_addr)
-            end
+        local err
+        route_opts.matcher_ins, err = parse_remote_addr(route.remote_addr)
+        if err then
+            error("invalid IP address: " .. err, 2)
         end
 
         insert_route(self, route_opts)
@@ -383,41 +357,19 @@ local function match_route_opts(route, opts)
         end
     end
 
-    local remote_addrs = route.remote_addrs
-    if remote_addrs and #remote_addrs == 2 then
-        if radix.is_valid_ipv4(opts.remote_addr) ~= 0 then
+    local matcher_ins = route.matcher_ins
+    if matcher_ins then
+        local ok, err = matcher_ins:match(opts.remote_addr)
+        if err then
+            log_info("failed to match ip: ", err)
             return false
         end
-
-        local route_addr_bits = 32 - remote_addrs[2]
-        local remote_addr_inet = radix.inet_network(opts.remote_addr)
-        if bit.rshift(remote_addrs[1], route_addr_bits)
-            ~= bit.rshift(remote_addr_inet, route_addr_bits) then
+        if not ok then
             return false
-        end
-
-    elseif remote_addrs and #remote_addrs == 8 then
-        if radix.is_valid_ipv6(opts.remote_addr) ~= 0 then
-            return false
-        end
-
-        local ip_items = ffi_new("unsigned int[4]")
-        local ret = radix.parse_ipv6(opts.remote_addr, ip_items)
-        if ret ~= 0 then
-            error("failed to parse ipv6 address: " .. opts.remote_addr)
-        end
-
-        for i = 1, 4 do
-            local route_addr_bits = 32 - remote_addrs[i * 2]
-            local remote_addr_inet = ip_items[i - 1]
-            if bit.rshift(remote_addrs[i * 2 - 1], route_addr_bits)
-                ~= bit.rshift(remote_addr_inet, route_addr_bits) then
-                return false
-            end
         end
     end
 
-    log_info("route.hosts: ", type(route.hosts))
+    -- log_info("route.hosts: ", type(route.hosts))
     if route.hosts then
         local matched = false
         local hosts = route.hosts

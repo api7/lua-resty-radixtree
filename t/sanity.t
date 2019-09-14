@@ -304,3 +304,41 @@ metadata /aa
 nil
 nil
 nil
+
+
+
+=== TEST 9: method: TRACE
+--- config
+    location /t {
+        content_by_lua_block {
+            local radix = require("resty.radixtree")
+            local rx = radix.new({
+                {
+                    path = "/aa",
+                    metadata = "metadata /aa",
+                    method = {"TRACE"},
+                },
+                {
+                    path = "/aa*",
+                    metadata = "metadata /aa*",
+                    method = {"PUT"},
+                }
+            })
+
+            ngx.say(rx:match("/aa", {method = "TRACE"}))
+            ngx.say(rx:match("/aa/bb", {method = "TRACE"}))
+
+
+            ngx.say(rx:match("/aa", {method = "GET"}))
+            ngx.say(rx:match("/aa/bb", {method = "GET"}))
+        }
+    }
+--- request
+GET /t
+--- no_error_log
+[error]
+--- response_body
+metadata /aa
+nil
+nil
+nil

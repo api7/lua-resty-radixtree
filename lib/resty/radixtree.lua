@@ -5,13 +5,11 @@ local clear_tab   = require("table.clear")
 local clone_tab   = require("table.clone")
 local bit         = require("bit")
 local new_tab     = base.new_tab
-local find_str    = string.find
 local tonumber    = tonumber
 local ipairs      = ipairs
 local ffi         = require "ffi"
 local ffi_cast    = ffi.cast
 local ffi_cdef    = ffi.cdef
-local ffi_new     = ffi.new
 local insert_tab  = table.insert
 local string      = string
 local io          = io
@@ -22,7 +20,6 @@ local type        = type
 local error       = error
 local newproxy    = newproxy
 local tostring    = tostring
-local str_sub     = string.sub
 local sort_tab    = table.sort
 local cur_level   = ngx.config.subsystem == "http" and
                     require "ngx.errlog" .get_sys_filter_level()
@@ -84,18 +81,15 @@ ffi_cdef[[
 ]]
 
 
-local METHODS = {
-  GET     = 2,
-  POST    = bit.lshift(2, 1),
-  PUT     = bit.lshift(2, 2),
-  DELETE  = bit.lshift(2, 3),
-  PATCH   = bit.lshift(2, 4),
-  HEAD    = bit.lshift(2, 5),
-  OPTIONS = bit.lshift(2, 16),
-}
+local METHODS = {}
+for i, name in ipairs({"GET", "POST", "PUT", "DELETE", "PATCH", "HEAD",
+                       "OPTIONS", "CONNECT", "TRACE"}) do
+    METHODS[name] = bit.lshift(1, i - 1)
+    -- ngx.log(ngx.WARN, "name: ", name, " val: ", METHODS[name])
+end
 
 
-local _M = { _VERSION = '0.01' }
+local _M = { _VERSION = 0.02 }
 
 
 -- only work under lua51 or luajit

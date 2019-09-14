@@ -266,3 +266,41 @@ metadata /aa
 nil
 nil
 nil
+
+
+
+=== TEST 8: method: CONNECT
+--- config
+    location /t {
+        content_by_lua_block {
+            local radix = require("resty.radixtree")
+            local rx = radix.new({
+                {
+                    path = "/aa",
+                    metadata = "metadata /aa",
+                    method = {"CONNECT"},
+                },
+                {
+                    path = "/aa*",
+                    metadata = "metadata /aa*",
+                    method = {"PUT"},
+                }
+            })
+
+            ngx.say(rx:match("/aa", {method = "CONNECT"}))
+            ngx.say(rx:match("/aa/bb", {method = "CONNECT"}))
+
+
+            ngx.say(rx:match("/aa", {method = "GET"}))
+            ngx.say(rx:match("/aa/bb", {method = "GET"}))
+        }
+    }
+--- request
+GET /t
+--- no_error_log
+[error]
+--- response_body
+metadata /aa
+nil
+nil
+nil

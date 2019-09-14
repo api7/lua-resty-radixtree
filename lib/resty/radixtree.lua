@@ -91,7 +91,8 @@ local METHODS = {
   DELETE  = bit.lshift(2, 3),
   PATCH   = bit.lshift(2, 4),
   HEAD    = bit.lshift(2, 5),
-  OPTIONS = bit.lshift(2, 16),
+  OPTIONS = bit.lshift(2, 6),
+  CONNECT = bit.lshift(2, 7),
 }
 
 

@@ -92,7 +92,7 @@ The attributes of each element may contain these:
 |handler    |option  |Will call this function using `rx:dispatch` to match route.|
 |host       |option  |Client request host, not only supports normal domain name, but also supports wildcard name, both `foo.com` and `*.foo.com` are valid.|
 |remote_addr|option  |Client remote address like `192.168.1.100`, and we can use CIDR format, eg `192.168.1.0/24`. BTW, In addition to supporting the IPv6 format, multiple IP addresses are allowed, this field will be an array table at this case, the elements of array shoud be a string IPv4 or IPv6 address.|
-|method     |option  |It's an array table, we can put one or more method names together. Here is the valid method list: "GET", "POST", "PUT", "DELETE", "PATCH", "HEAD", "OPTIONS" and "CONNECT".|
+|method     |option  |It's an array table, we can put one or more method names together. Here is the valid method list: "GET", "POST", "PUT", "DELETE", "PATCH", "HEAD", "OPTIONS", "CONNECT" and "TRACE".|
 |vars       |option  |It is an array of one or more {var, operator, val} elements. For example: {{var, operator, val}, {var, operator, val}, ...}. `{"arg_key", "==", "val"}` means the value of argument `key` expect to `val`.|
 |filter_fun |option  |User defined filter function, We can use it to achieve matching logic for special scenes. `radixtree` will only pass one parameter which named `vars` when matching route.|
 

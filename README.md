@@ -12,7 +12,7 @@ Table of Contents
 
 * [Name](#name)
 * [Status](#status)
-* [Synopsys](#synopsys)
+* [Synopsis](#synopsis)
 * [Methods](#methods)
     * [new](#new)
     * [match](#match)
@@ -25,7 +25,7 @@ Status
 
 **This repository is an experimental.**
 
-Synopsys
+Synopsis
 ========
 
 ```lua

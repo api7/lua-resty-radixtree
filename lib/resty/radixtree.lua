@@ -181,6 +181,83 @@ end
 
 do
     local route_opts = {}
+
+local function pre_insert_route(self, path, route)
+    if type(path) ~= "string" then
+        error("invalid argument path", 2)
+    end
+
+    if type(route.metadata) == "nil" and type(route.handler) == "nil" then
+        error("missing argument metadata or handler", 2)
+    end
+
+    if route.vars then
+        if type(route.vars) ~= "table" then
+            error("invalid argument vars", 2)
+        end
+    end
+
+    local method  = route.method
+    local bit_methods
+    if type(method) ~= "table" then
+        bit_methods = method and METHODS[method] or 0
+
+    else
+        bit_methods = 0
+        for _, m in ipairs(method) do
+            bit_methods = bit.bor(bit_methods, METHODS[m])
+        end
+    end
+
+    clear_tab(route_opts)
+
+    local host = route.host
+    if type(host) == "table" and #host > 0 then
+        route_opts.hosts = {}
+        for _, h in ipairs(host) do
+            local host_is_wildcard = false
+            if h and h:sub(1, 1) == '*' then
+                host_is_wildcard = true
+                h = h:sub(2):reverse()
+            end
+
+            insert_tab(route_opts.hosts, host_is_wildcard)
+            insert_tab(route_opts.hosts, h)
+        end
+
+    elseif type(host) == "string" then
+        local host_is_wildcard = false
+        if host and host:sub(1, 1) == '*' then
+            host_is_wildcard = true
+            host = host:sub(2):reverse()
+        end
+
+        route_opts.hosts = {host_is_wildcard, host}
+    end
+
+    if path:sub(#path) == "*" then
+        path = path:sub(1, #path - 1)
+        route_opts.path_op = "<="
+    else
+        route_opts.path_op = "="
+    end
+    route_opts.path = path
+
+    route_opts.metadata = route.metadata
+    route_opts.handler  = route.handler
+    route_opts.method   = bit_methods
+    route_opts.vars     = route.vars
+    route_opts.filter_fun   = route.filter_fun
+
+    local err
+    route_opts.matcher_ins, err = parse_remote_addr(route.remote_addr)
+    if err then
+        error("invalid IP address: " .. err, 2)
+    end
+
+    insert_route(self, route_opts)
+end
+
 function _M.new(routes)
     if not routes then
         return nil, "missing argument route"
@@ -198,81 +275,14 @@ function _M.new(routes)
     -- register routes
     for i = 1, route_n do
         local route = routes[i]
-
-        if type(route.path) ~= "string" then
-            error("invalid argument path", 2)
-        end
-
-        if type(route.metadata) == "nil" and type(route.handler) == "nil" then
-            error("missing argument metadata or handler", 2)
-        end
-
-        if route.vars then
-            if type(route.vars) ~= "table" then
-                error("invalid argument vars", 2)
-            end
-        end
-
-        local method  = route.method
-        local bit_methods
-        if type(method) ~= "table" then
-            bit_methods = method and METHODS[method] or 0
+        if type(route.path) == "string" then
+            pre_insert_route(self, route.path, route)
 
         else
-            bit_methods = 0
-            for _, m in ipairs(method) do
-                bit_methods = bit.bor(bit_methods, METHODS[m])
+            for _, path in ipairs(route.path) do
+                pre_insert_route(self, path, route)
             end
         end
-
-        clear_tab(route_opts)
-
-        local host = route.host
-        if type(host) == "table" and #host > 0 then
-            route_opts.hosts = {}
-            for _, h in ipairs(host) do
-                local host_is_wildcard = false
-                if h and h:sub(1, 1) == '*' then
-                    host_is_wildcard = true
-                    h = h:sub(2):reverse()
-                end
-
-                insert_tab(route_opts.hosts, host_is_wildcard)
-                insert_tab(route_opts.hosts, h)
-            end
-
-        elseif type(host) == "string" then
-            local host_is_wildcard = false
-            if host and host:sub(1, 1) == '*' then
-                host_is_wildcard = true
-                host = host:sub(2):reverse()
-            end
-
-            route_opts.hosts = {host_is_wildcard, host}
-        end
-
-        local path = route.path
-        if path:sub(#path) == "*" then
-            path = path:sub(1, #path - 1)
-            route_opts.path_op = "<="
-        else
-            route_opts.path_op = "="
-        end
-        route_opts.path = path
-
-        route_opts.metadata = route.metadata
-        route_opts.handler  = route.handler
-        route_opts.method   = bit_methods
-        route_opts.vars     = route.vars
-        route_opts.filter_fun   = route.filter_fun
-
-        local err
-        route_opts.matcher_ins, err = parse_remote_addr(route.remote_addr)
-        if err then
-            error("invalid IP address: " .. err, 2)
-        end
-
-        insert_route(self, route_opts)
     end
 
     return self

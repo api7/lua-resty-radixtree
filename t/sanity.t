@@ -342,3 +342,41 @@ metadata /aa
 nil
 nil
 nil
+
+
+
+=== TEST 10: Iterator
+--- config
+    location /t {
+        content_by_lua_block {
+            local radix = require("resty.radixtree")
+            local rx = radix.new({
+                {
+                    path = "/*",
+                    metadata = "metadata /*",
+                },
+                {
+                    path = "/aa/*",
+                    metadata = "metadata /aa",
+                },
+                {
+                    path = "/bb/*",
+                    method = {"PUT"},
+                    metadata = "metadata /bb/*",
+                },
+                {
+                    path = "/bb/aa/*",
+                    method = {"PUT"},
+                    metadata = "metadata /bb/aa/*",
+                },
+            })
+
+            ngx.say(rx:match("/bb/aa/bb"))
+        }
+    }
+--- request
+GET /t
+--- no_error_log
+[error]
+--- response_body
+metadata /*

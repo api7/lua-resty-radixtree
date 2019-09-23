@@ -37,20 +37,20 @@ Synopsis
                 path = "/aa",
                 metadata = "metadata /aa",
                 host = "foo.com",
-                method = {"GET", "POST"},
+                method = {"GET", "POST"},           -- multiple method
                 remote_addr = "127.0.0.1",
             },
             {
                 path = "/bb*",
                 metadata = "metadata /bb",
-                host = {"*.bar.com", "gloo.com"},
+                host = {"*.bar.com", "gloo.com"},   -- multiple host
                 method = {"GET", "POST", "PUT"},
                 remote_addr = "fe80:fe80::/64",
-                vars = {
+                vars = {                            -- multiple var
                     {"arg_name", "==", "json"},
                     {"arg_weight", ">", "10"},
                 },
-                filter_fun = function(vars)
+                filter_fun = function(vars)         -- callback fun
                     return vars["arg_name"] == "json"
                 end,
             },
@@ -58,8 +58,12 @@ Synopsis
                 path = "/cc",
                 metadata = "metadata /cc",
                 remote_addr = {"127.0.0.1","192.168.0.0/16",
-                               "::1", "fe80::/32"}
+                               "::1", "fe80::/32"}  -- multiple remote_addr
             },
+            {
+                path = {"/dd", "/dd/ee", "/dd/ff/*"},   -- multiple path
+                metadata = "metadata /dd and /dd/ee"
+            }
         })
 
         -- try to match
@@ -79,7 +83,7 @@ Methods
 new
 ---
 
-`syntax: rx, err = radix:new(routes)`
+`syntax: rx, err = radix.new(routes)`
 
 The routes is a array table, like `{ {...}, {...}, {...} }`, Each element in the array is a route, which is a hash table.
 
@@ -87,11 +91,11 @@ The attributes of each element may contain these:
 
 |name       |option  |description|
 |--------   |--------|-----------|
-|path       |required|client request uri, the default is a full match. But if the end of the path is `*`, it means that this is a prefix path. For example `/foo*`, it'll match `/foo/bar` or `/foo/glo/grey` etc.|
+|path       |required|Client request uri, the default is a full match. But if the end of the path is `*`, it means that this is a prefix path. For example `/foo*`, it'll match `/foo/bar` or `/foo/glo/grey` etc. We can set multiple `path` by an array table, eg: `{"/", "/aa", "/bb"}`.|
 |metadata   |option  |Will return this field if using `rx:match` to match route.|
 |handler    |option  |Will call this function using `rx:dispatch` to match route.|
-|host       |option  |Client request host, not only supports normal domain name, but also supports wildcard name, both `foo.com` and `*.foo.com` are valid.|
-|remote_addr|option  |Client remote address like `192.168.1.100`, and we can use CIDR format, eg `192.168.1.0/24`. BTW, In addition to supporting the IPv6 format, multiple IP addresses are allowed, this field will be an array table at this case, the elements of array shoud be a string IPv4 or IPv6 address.|
+|host       |option  |Client request host, not only supports normal domain name, but also supports wildcard name, both `foo.com` and `*.foo.com` are valid. We can set multiple `host` by an array table, eg: `{"foo.com", "bar.com"}`.|
+|remote_addr|option  |Client remote address like `192.168.1.100`, and we can use CIDR format, eg `192.168.1.0/24`. BTW, In addition to supporting the IPv6 format, multiple IP addresses are allowed, this field will be an array table at this case, the elements of array shoud be a string IPv4 or IPv6 address. We can set multiple `remote_addr` by an array table, eg: `{"127.0.0.1", "192.0.0.0/8"}`.|
 |method     |option  |It's an array table, we can put one or more method names together. Here is the valid method list: "GET", "POST", "PUT", "DELETE", "PATCH", "HEAD", "OPTIONS", "CONNECT" and "TRACE".|
 |vars       |option  |It is an array of one or more {var, operator, val} elements. For example: {{var, operator, val}, {var, operator, val}, ...}. `{"arg_key", "==", "val"}` means the value of argument `key` expect to `val`.|
 |filter_fun |option  |User defined filter function, We can use it to achieve matching logic for special scenes. `radixtree` will only pass one parameter which named `vars` when matching route.|

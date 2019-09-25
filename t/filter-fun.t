@@ -14,7 +14,7 @@ __DATA__
             local radix = require("resty.radixtree")
             local rx = radix.new({
                 {
-                    path = "/aa",
+                    paths = "/aa",
                     metadata = "metadata /aa",
                     filter_fun = function(vars)
                         ngx.log(ngx.WARN, "start to filter")
@@ -46,7 +46,7 @@ metadata /aa
             local radix = require("resty.radixtree")
             local rx = radix.new({
                 {
-                    path = "/aa",
+                    paths = "/aa",
                     metadata = "metadata /aa",
                     filter_fun = function(vars)
                         ngx.log(ngx.WARN, "start to filter")

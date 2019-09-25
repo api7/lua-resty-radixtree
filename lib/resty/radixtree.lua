@@ -200,7 +200,7 @@ local function pre_insert_route(self, path, route)
         end
     end
 
-    local method  = route.method
+    local method  = route.methods
     local bit_methods
     if type(method) ~= "table" then
         bit_methods = method and METHODS[method] or 0
@@ -214,10 +214,10 @@ local function pre_insert_route(self, path, route)
 
     clear_tab(route_opts)
 
-    local host = route.host
-    if type(host) == "table" and #host > 0 then
+    local hosts = route.hosts
+    if type(hosts) == "table" and #hosts > 0 then
         route_opts.hosts = {}
-        for _, h in ipairs(host) do
+        for _, h in ipairs(hosts) do
             local host_is_wildcard = false
             if h and h:sub(1, 1) == '*' then
                 host_is_wildcard = true
@@ -228,14 +228,14 @@ local function pre_insert_route(self, path, route)
             insert_tab(route_opts.hosts, h)
         end
 
-    elseif type(host) == "string" then
+    elseif type(hosts) == "string" then
         local host_is_wildcard = false
-        if host and host:sub(1, 1) == '*' then
+        if hosts and hosts:sub(1, 1) == '*' then
             host_is_wildcard = true
-            host = host:sub(2):reverse()
+            hosts = hosts:sub(2):reverse()
         end
 
-        route_opts.hosts = {host_is_wildcard, host}
+        route_opts.hosts = {host_is_wildcard, hosts}
     end
 
     if path:sub(#path) == "*" then
@@ -253,7 +253,8 @@ local function pre_insert_route(self, path, route)
     route_opts.filter_fun   = route.filter_fun
 
     local err
-    route_opts.matcher_ins, err = parse_remote_addr(route.remote_addr)
+    local remote_addrs = route.remote_addrs
+    route_opts.matcher_ins, err = parse_remote_addr(remote_addrs)
     if err then
         error("invalid IP address: " .. err, 2)
     end
@@ -278,11 +279,12 @@ function _M.new(routes)
     -- register routes
     for i = 1, route_n do
         local route = routes[i]
-        if type(route.path) == "string" then
-            pre_insert_route(self, route.path, route)
+        local paths = route.paths
+        if type(paths) == "string" then
+            pre_insert_route(self, paths, route)
 
         else
-            for _, path in ipairs(route.path) do
+            for _, path in ipairs(paths) do
                 pre_insert_route(self, path, route)
             end
         end

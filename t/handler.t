@@ -14,25 +14,25 @@ __DATA__
             local radix = require("resty.radixtree")
             local rx = radix.new({
                 {
-                    path = "/",
+                    paths ="/",
                     handler = function (ctx)
                         ngx.say("handler /")
                     end,
                 },
                 {
-                    path = "/*",
+                    paths ="/*",
                     handler = function (ctx)
                         ngx.say("handler /*")
                     end,
                 },
                 {
-                    path = "/aa",
+                    paths ="/aa",
                     handler = function (ctx)
                         ngx.say("handler /aa")
                     end,
                 },
                 {
-                    path = "/aa*",
+                    paths ="/aa*",
                     handler = function (ctx)
                         ngx.say("handler /aa*")
                     end,
@@ -68,7 +68,7 @@ true
             local radix = require("resty.radixtree")
             local rx = radix.new({
                 {
-                    path = "/aa*",
+                    paths ="/aa*",
                     handler = function (n)
                         ngx.say("handler /aa*", n)
                     end,
@@ -100,13 +100,13 @@ nil
             local radix = require("resty.radixtree")
             local rx = radix.new({
                 {
-                    path = "/aa*",
+                    paths ="/aa*",
                     handler = function ()
                         ngx.say("handler /aa*")
                     end,
                 },
                 {
-                    path = "/bb*",
+                    paths ="/bb*",
                     handler = function ()
                         ngx.say("handler /bb*")
                     end,
@@ -141,19 +141,19 @@ true
             local radix = require("resty.radixtree")
             local rx = radix.new({
                 {
-                    path = "/aa",
+                    paths ="/aa",
                     handler = function ()
                         ngx.say("handler /aa")
                     end,
                 },
                 {
-                    path = "/aa/bb",
+                    paths ="/aa/bb",
                     handler = function ()
                         ngx.say("handler /bb")
                     end,
                 },
                 {
-                    path = "/aa/bb/cc",
+                    paths ="/aa/bb/cc",
                     handler = function ()
                         ngx.say("handler /aa/bb/cc")
                     end,
@@ -180,23 +180,23 @@ true
             local radix = require("resty.radixtree")
             local rx = radix.new({
                 {
-                    path = "/aa*",
+                    paths ="/aa*",
                     handler = function ()
                         ngx.say("handler /aa*")
                     end,
                 },
                 {
-                    path = "/aa/bb*",
+                    paths ="/aa/bb*",
                     handler = function ()
                         ngx.say("handler /aa/bb*")
                     end,
                 },
                 {
-                    path = "/aa/bb/cc*",
+                    paths ="/aa/bb/cc*",
+                    methods = {"POST", "PUT"},
                     handler = function ()
                         ngx.say("handler /aa/bb/cc*")
                     end,
-                    method = {"POST", "PUT"}
                 }
             })
 
@@ -226,23 +226,23 @@ true
             local radix = require("resty.radixtree")
             local rx = radix.new({
                 {
-                    path = "/aa",
+                    paths ="/aa",
                     handler = function ()
                         ngx.say("handler /aa")
                     end,
                 },
                 {
-                    path = "/aa/bb",
+                    paths ="/aa/bb",
                     handler = function ()
                         ngx.say("handler /aa/bb")
                     end,
                 },
                 {
-                    path = "/aa/bb/cc",
+                    paths ="/aa/bb/cc",
+                    methods = {"POST", "PUT"},
                     handler = function ()
                         ngx.say("handler /aa/bb/cc")
                     end,
-                    method = {"POST", "PUT"}
                 }
             })
 

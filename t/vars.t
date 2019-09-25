@@ -14,7 +14,7 @@ __DATA__
             local radix = require("resty.radixtree")
             local rx = radix.new({
                 {
-                    path = "/aa",
+                    paths = "/aa",
                     metadata = "metadata /aa",
                     vars = {
                         {"arg_k", "v"},
@@ -41,7 +41,7 @@ metadata /aa
             local radix = require("resty.radixtree")
             local rx = radix.new({
                 {
-                    path = "/aa",
+                    paths = "/aa",
                     metadata = "metadata /aa",
                     vars = {
                         {"arg_k", "v"},
@@ -68,7 +68,7 @@ nil
             local radix = require("resty.radixtree")
             local rx = radix.new({
                 {
-                    path = "/aa",
+                    paths = "/aa",
                     metadata = "metadata /aa",
                     vars = {
                         {"http_test", "v"},
@@ -97,7 +97,7 @@ metadata /aa
             local radix = require("resty.radixtree")
             local rx = radix.new({
                 {
-                    path = "/aa",
+                    paths = "/aa",
                     metadata = "metadata /aa",
                     vars = {
                         {"http_test", "v"},
@@ -126,7 +126,7 @@ nil
             local radix = require("resty.radixtree")
             local rx = radix.new({
                 {
-                    path = "/aa",
+                    paths = "/aa",
                     metadata = "metadata /aa",
                     vars = {
                         {"arg_k", "v"},
@@ -155,7 +155,7 @@ metadata /aa
             local radix = require("resty.radixtree")
             local rx = radix.new({
                 {
-                    path = "/aa",
+                    paths = "/aa",
                     metadata = "metadata /aa",
                     vars = {
                         {"arg_k", "v"},
@@ -184,7 +184,7 @@ nil
             local radix = require("resty.radixtree")
             local rx = radix.new({
                 {
-                    path = "/aa",
+                    paths = "/aa",
                     metadata = "metadata /aa",
                     vars = {
                         {"arg_k", "v"},
@@ -213,7 +213,7 @@ metadata /aa
             local radix = require("resty.radixtree")
             local rx = radix.new({
                 {
-                    path = "/aa",
+                    paths = "/aa",
                     metadata = "metadata /aa",
                     vars = {
                         {"arg_k", "~=", "v"},
@@ -240,7 +240,7 @@ nil
             local radix = require("resty.radixtree")
             local rx = radix.new({
                 {
-                    path = "/aa",
+                    paths = "/aa",
                     metadata = "metadata /aa",
                     vars = {
                         {"arg_k", "~=", "************"},
@@ -267,7 +267,7 @@ metadata /aa
             local radix = require("resty.radixtree")
             local rx = radix.new({
                 {
-                    path = "/aa",
+                    paths = "/aa",
                     metadata = "metadata /aa",
                     vars = {
                         {"arg_k", ">", 10},
@@ -294,7 +294,7 @@ metadata /aa
             local radix = require("resty.radixtree")
             local rx = radix.new({
                 {
-                    path = "/aa",
+                    paths = "/aa",
                     metadata = "metadata /aa",
                     vars = {
                         {"arg_k", ">", 10},
@@ -321,7 +321,7 @@ nil
             local radix = require("resty.radixtree")
             local rx = radix.new({
                 {
-                    path = "/aa",
+                    paths = "/aa",
                     metadata = "metadata /aa",
                     vars = {
                         {"arg_k", "invalid", 10},
@@ -348,14 +348,14 @@ nil
             local radix = require("resty.radixtree")
             local rx = radix.new({
                 {
-                    path = "/aa",
+                    paths = "/aa",
                     metadata = "metadata /aa",
                     vars = {
                         {"arg_k", "v"},
                     },
                 },
                 {
-                    path = "/aa",
+                    paths = "/aa",
                     metadata = "metadata /aa2",
                     vars = {
                         {"arg_k", "~=", "not hit"},
@@ -382,14 +382,14 @@ metadata /aa
             local radix = require("resty.radixtree")
             local rx = radix.new({
                 {
-                    path = "/aa",
+                    paths = "/aa",
                     metadata = "metadata /aa",
                     vars = {
                         {"arg_k", "v"},
                     },
                 },
                 {
-                    path = "/aa",
+                    paths = "/aa",
                     metadata = "metadata /aa2",
                     vars = {
                         {"arg_k", "~=", "not hit"},

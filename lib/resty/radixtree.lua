@@ -74,10 +74,13 @@ ffi_cdef[[
     int radix_tree_insert(void *t, const unsigned char *buf, size_t len,
         void *data);
     void *radix_tree_find(void *t, const unsigned char *buf, size_t len);
-    void *radix_tree_search(void *t, const unsigned char *buf, size_t len);
+    void *radix_tree_search(void *t, void *it, const unsigned char *buf,
+        size_t len);
     void *radix_tree_pcre(void *it, const unsigned char *buf, size_t len);
     void *radix_tree_next(void *it, const unsigned char *buf, size_t len);
     int radix_tree_stop(void *it);
+
+    void *radix_tree_new_it();
 ]]
 
 
@@ -429,6 +432,13 @@ end
 
 
     local matched_routes = {}
+    local radix_it = radix.radix_tree_new_it()
+    if radix_it == nil then
+        error("failed to new radixtree it")
+    end
+    -- use gc to free
+    ffi.gc(radix_it, ffi.C.free)
+
 local function match_route(self, path, opts)
     clear_tab(matched_routes)
     local routes = self.hash_path[path]
@@ -448,7 +458,7 @@ local function match_route(self, path, opts)
         clear_tab(matched_routes)
     end
 
-    local it = radix.radix_tree_search(self.tree, path, #path)
+    local it = radix.radix_tree_search(self.tree, radix_it, path, #path)
     if not it then
         return nil, "failed to match"
     end

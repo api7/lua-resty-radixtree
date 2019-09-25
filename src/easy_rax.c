@@ -66,17 +66,6 @@ radix_tree_new_it()
 }
 
 
-int
-radix_tree_destroy_it(void *it)
-{
-    if (it) {
-        free(it);
-    }
-
-    return 0;
-}
-
-
 void *
 radix_tree_search(void *t, void *it, const unsigned char *buf, size_t len)
 {

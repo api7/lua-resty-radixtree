@@ -79,8 +79,8 @@ ffi_cdef[[
     void *radix_tree_pcre(void *it, const unsigned char *buf, size_t len);
     void *radix_tree_next(void *it, const unsigned char *buf, size_t len);
     int radix_tree_stop(void *it);
+
     void *radix_tree_new_it();
-    int radix_tree_destroy_it(void *it);
 ]]
 
 
@@ -436,6 +436,8 @@ end
     if radix_it == nil then
         error("failed to new radixtree it")
     end
+    -- use gc to free
+    ffi.gc(radix_it, ffi.C.free)
 
 local function match_route(self, path, opts)
     clear_tab(matched_routes)

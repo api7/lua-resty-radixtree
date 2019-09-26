@@ -20,7 +20,6 @@ local type        = type
 local error       = error
 local newproxy    = newproxy
 local tostring    = tostring
-local sort_tab    = table.sort
 local cur_level   = ngx.config.subsystem == "http" and
                     require "ngx.errlog" .get_sys_filter_level()
 local ngx_var     = ngx.var
@@ -427,13 +426,6 @@ local function match_route_opts(route, opts)
     return true
 end
 
-
-local function sort_route(l, r)
-    return #l.path >= #r.path
-end
-
-
-    local matched_routes = {}
     local radix_it = radix.radix_tree_new_it()
     if radix_it == nil then
         error("failed to new radixtree it")
@@ -441,23 +433,32 @@ end
     -- use gc to free
     ffi.gc(radix_it, ffi.C.free)
 
-local function match_route(self, path, opts)
-    clear_tab(matched_routes)
-    local routes = self.hash_path[path]
-    if routes then
-        for _, route in ipairs(routes) do
-            insert_tab(matched_routes, route)
-        end
-    end
+local function _match_from_routes(routes, path, opts)
+    for _, route in ipairs(routes) do
+        if route.path_op == "=" then
+            if route.path == path then
+                if match_route_opts(route, opts) then
+                    return route
+                end
+            end
 
-    if #matched_routes > 0 then
-        for _, route in ipairs(matched_routes) do
+        else
             if match_route_opts(route, opts) then
                 return route
             end
         end
+    end
+    return nil
+end
 
-        clear_tab(matched_routes)
+local function match_route(self, path, opts)
+    local routes = self.hash_path[path]
+    if routes then
+        for _, route in ipairs(routes) do
+            if match_route_opts(route, opts) then
+                return route
+            end
+        end
     end
 
     local it = radix.radix_tree_search(self.tree, radix_it, path, #path)
@@ -476,33 +477,15 @@ local function match_route(self, path, opts)
         routes = self.match_data[idx]
         -- log_info("route: ", require("cjson").encode(routes))
         if routes then
-            for _, route in ipairs(routes) do
-                if route.path_op == "=" then
-                    if route.path == path then
-                        insert_tab(matched_routes, route)
-                        break
-                    end
-                else
-                    insert_tab(matched_routes, route)
-                end
+            local route = _match_from_routes(routes, path, opts)
+            if route then
+                radix.radix_tree_stop(it)
+                return route
             end
         end
     end
 
     radix.radix_tree_stop(it)
-
-    if #matched_routes == 0 then
-        return nil
-    end
-
-    sort_tab(matched_routes, sort_route)
-
-    for _, route in ipairs(matched_routes) do
-        if match_route_opts(route, opts) then
-            return route
-        end
-    end
-
     return nil
 end
 

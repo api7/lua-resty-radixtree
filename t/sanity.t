@@ -14,19 +14,19 @@ __DATA__
             local radix = require("resty.radixtree")
             local rx = radix.new({
                 {
-                    path = "/",
+                    paths = {"/"},
                     metadata = "metadata /",
                 },
                 {
-                    path = "/*",
+                    paths = {"/*"},
                     metadata = "metadata /*",
                 },
                 {
-                    path = "/aa",
+                    paths = {"/aa"},
                     metadata = "metadata /aa",
                 },
                 {
-                    path = "/aa*",
+                    paths = {"/aa*"},
                     metadata = "metadata /aa*",
                 }
             })
@@ -56,7 +56,7 @@ metadata /
             local radix = require("resty.radixtree")
             local rx = radix.new({
                 {
-                    path = "/aa*",
+                    paths = {"/aa*"},
                     metadata = "metadata /aa",
                 }
             })
@@ -84,11 +84,11 @@ nil
             local radix = require("resty.radixtree")
             local rx = radix.new({
                 {
-                    path = "/aa*",
+                    paths = {"/aa*"},
                     metadata = "metadata /aa",
                 },
                 {
-                    path = "/bb*",
+                    paths = "/bb*",
                     metadata = "metadata /bb",
                 }
             })
@@ -118,15 +118,15 @@ metadata /aa
             local radix = require("resty.radixtree")
             local rx = radix.new({
                 {
-                    path = "/aa",
+                    paths = "/aa",
                     metadata = "metadata /aa",
                 },
                 {
-                    path = "/aa/bb",
+                    paths = "/aa/bb",
                     metadata = "metadata /aa/bb",
                 },
                 {
-                    path = "/aa/bb/cc",
+                    paths = "/aa/bb/cc",
                     metadata = "metadata /aa/bb/cc",
                 }
             })
@@ -150,17 +150,17 @@ metadata /aa/bb/cc
             local radix = require("resty.radixtree")
             local rx = radix.new({
                 {
-                    path = "/aa*",
+                    paths = {"/aa*"},
                     metadata = "metadata /aa",
                 },
                 {
-                    path = "/aa/bb*",
+                    paths = {"/aa/bb*"},
                     metadata = "metadata /aa/bb",
                 },
                 {
-                    path = "/aa/bb/cc*",
+                    paths = {"/aa/bb/cc*"},
+                    methods = {"POST", "PUT"},
                     metadata = "metadata /aa/bb/cc",
-                    method = {"POST", "PUT"}
                 }
             })
 
@@ -187,17 +187,17 @@ metadata /aa/bb/cc
             local radix = require("resty.radixtree")
             local rx = radix.new({
                 {
-                    path = "/aa",
+                    paths = {"/aa"},
                     metadata = "metadata /aa",
                 },
                 {
-                    path = "/aa/bb",
+                    paths = {"/aa/bb"},
                     metadata = "metadata /aa/bb",
                 },
                 {
-                    path = "/aa/bb/cc",
+                    paths = {"/aa/bb/cc"},
+                    methods = {"POST", "PUT"},
                     metadata = "metadata /aa/bb/cc",
-                    method = {"POST", "PUT"}
                 }
             })
 
@@ -224,18 +224,18 @@ metadata /aa/bb/cc
             local radix = require("resty.radixtree")
             local rx = radix.new({
                 {
-                    path = "/aa",
+                    paths = {"/aa"},
+                    hosts = {"foo.com"},
+                    methods = {"GET", "POST"},
+                    remote_addrs = {"127.0.0.1"},
                     metadata = "metadata /aa",
-                    host = "foo.com",
-                    method = {"GET", "POST"},
-                    remote_addr = "127.0.0.1",
                 },
                 {
-                    path = "/bb*",
-                    metadata = "metadata /bb",
-                    host = {"*.bar.com", "gloo.com"},
-                    method = {"GET", "POST", "PUT"},
-                    remote_addr = "fe80:fe80::/64",
+                    paths = {"/bb*"},
+                    metadata = {"metadata /bb"},
+                    hosts = {"*.bar.com", "gloo.com"},
+                    methods = {"GET", "POST", "PUT"},
+                    remote_addrs = "fe80:fe80::/64",
                 }
             })
 
@@ -276,14 +276,14 @@ nil
             local radix = require("resty.radixtree")
             local rx = radix.new({
                 {
-                    path = "/aa",
+                    paths = {"/aa"},
+                    methods = {"CONNECT"},
                     metadata = "metadata /aa",
-                    method = {"CONNECT"},
                 },
                 {
-                    path = "/aa*",
+                    paths = {"/aa*"},
+                    methods = {"PUT"},
                     metadata = "metadata /aa*",
-                    method = {"PUT"},
                 }
             })
 
@@ -314,14 +314,14 @@ nil
             local radix = require("resty.radixtree")
             local rx = radix.new({
                 {
-                    path = "/aa",
+                    paths = {"/aa"},
+                    methods = {"TRACE"},
                     metadata = "metadata /aa",
-                    method = {"TRACE"},
                 },
                 {
-                    path = "/aa*",
+                    paths = {"/aa*"},
+                    methods = {"PUT"},
                     metadata = "metadata /aa*",
-                    method = {"PUT"},
                 }
             })
 
@@ -352,21 +352,21 @@ nil
             local radix = require("resty.radixtree")
             local rx = radix.new({
                 {
-                    path = "/*",
+                    paths = {"/*"},
                     metadata = "metadata /*",
                 },
                 {
-                    path = "/aa/*",
+                    paths = {"/aa/*"},
                     metadata = "metadata /aa",
                 },
                 {
-                    path = "/bb/*",
-                    method = {"PUT"},
+                    paths = {"/bb/*"},
+                    methods = {"PUT"},
                     metadata = "metadata /bb/*",
                 },
                 {
-                    path = "/bb/aa/*",
-                    method = {"PUT"},
+                    paths = {"/bb/aa/*"},
+                    methods = {"PUT"},
                     metadata = "metadata /bb/aa/*",
                 },
             })

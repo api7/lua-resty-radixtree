@@ -14,14 +14,14 @@ __DATA__
             local radix = require("resty.radixtree")
             local rx = radix.new({
                 {
-                    path = "/aa",
+                    paths = {"/aa"},
+                    remote_addrs = {"127.0.0.1"},
                     metadata = "metadata /aa -> 127.0.0.1",
-                    remote_addr = "127.0.0.1",
                 },
                 {
-                    path = "/bb",
+                    paths = {"/bb"},
+                    remote_addrs = {"127.0.0.2"},
                     metadata = "metadata /bb -> 127.0.0.2",
-                    remote_addr = "127.0.0.2",
                 }
             })
 
@@ -50,9 +50,9 @@ metadata /bb -> 127.0.0.2
             local radix = require("resty.radixtree")
             local rx = radix.new({
                 {
-                    path = "/aa",
+                    paths = {"/aa"},
+                    remote_addrs = {"127.0.0.0/24"},
                     metadata = "metadata /aa -> 127.0.0.1",
-                    remote_addr = "127.0.0.0/24",
                 }
             })
 
@@ -81,14 +81,14 @@ nil
             local radix = require("resty.radixtree")
             local rx = radix.new({
                 {
-                    path = "/aa",
+                    paths = {"/aa"},
+                    remote_addrs = {"::1"},
                     metadata = "metadata /aa -> ::1",
-                    remote_addr = "::1",
                 },
                 {
-                    path = "/bb",
+                    paths = {"/bb"},
+                    remote_addrs = {"::2"},
                     metadata = "metadata /aa -> ::2",
-                    remote_addr = "::2",
                 }
             })
 
@@ -119,9 +119,9 @@ nil
             local radix = require("resty.radixtree")
             local rx = radix.new({
                 {
-                    path = "/aa",
+                    paths = {"/aa"},
+                    remote_addrs = {"fe80::1/64"},
                     metadata = "metadata /aa -> fe80::1/64",
-                    remote_addr = "fe80::1/64",
                 }
             })
 
@@ -150,14 +150,14 @@ nil
             local radix = require("resty.radixtree")
             local rx = radix.new({
                 {
-                    path = "/aa",
+                    paths = {"/aa"},
+                    remote_addrs = {"127.0.0.1", "127.0.0.3"},
                     metadata = "metadata /aa",
-                    remote_addr = {"127.0.0.1", "127.0.0.3"},
                 },
                 {
-                    path = "/bb",
+                    paths = {"/bb"},
+                    remote_addrs = {"127.0.0.2", "127.0.0.3"},
                     metadata = "metadata /bb",
-                    remote_addr = {"127.0.0.2", "127.0.0.3"},
                 }
             })
 
@@ -190,14 +190,14 @@ metadata /bb
             local radix = require("resty.radixtree")
             local rx = radix.new({
                 {
-                    path = "/aa",
+                    paths = {"/aa"},
+                    remote_addrs = {"::1", "::3"},
                     metadata = "metadata /aa",
-                    remote_addr = {"::1", "::3"},
                 },
                 {
-                    path = "/bb",
+                    paths = {"/bb"},
+                    remote_addrs = {"::2", "::3"},
                     metadata = "metadata /bb",
-                    remote_addr = {"::2", "::3"},
                 }
             })
 
@@ -232,10 +232,10 @@ nil
             local radix = require("resty.radixtree")
             local rx = radix.new({
                 {
-                    path = "/aa",
-                    metadata = "metadata /aa",
-                    remote_addr = {"127.0.0.1", "127.0.0.3", "::1", "::2",
+                    paths = {"/aa"},
+                    remote_addrs = {"127.0.0.1", "127.0.0.3", "::1", "::2",
                                    "192.168.0.0/16", "fe80::/16"},
+                    metadata = "metadata /aa",
                 }
             })
 

@@ -14,7 +14,7 @@ __DATA__
             local radix = require("resty.radixtree")
             local rx = radix.new({
                 {
-                    path = {"/"},
+                    paths = "/",
                     metadata = "metadata /",
                 },
             })
@@ -39,11 +39,11 @@ metadata /
             local radix = require("resty.radixtree")
             local rx = radix.new({
                 {
-                    path = {"/", "/aa", "/bb"},
+                    paths = {"/", "/aa", "/bb"},
                     metadata = "metadata multipe path 1",
                 },
                 {
-                    path = {"/cc"},
+                    paths = {"/cc"},
                     metadata = "metadata multipe path 2",
                 },
             })

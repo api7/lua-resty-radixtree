@@ -14,9 +14,9 @@ __DATA__
             local radix = require("resty.radixtree")
             local rx = radix.new({
                 {
-                    path = "/aa*",
+                    paths = {"/aa*"},
                     metadata = "metadata /aa",
-                    host = "foo.com"
+                    hosts = {"foo.com"},
                 }
             })
 
@@ -41,9 +41,9 @@ nil
             local radix = require("resty.radixtree")
             local rx = radix.new({
                 {
-                    path = "/aa*",
+                    paths = {"/aa*"},
+                    hosts = {"*.foo.com"},
                     metadata = "metadata /aa",
-                    host = "*.foo.com"
                 }
             })
 
@@ -72,9 +72,9 @@ metadata /aa
             local radix = require("resty.radixtree")
             local rx = radix.new({
                 {
-                    path = "/aa*",
+                    paths = {"/aa*"},
                     metadata = "metadata /aa",
-                    host = {"foo.com", "bar.com"}
+                    hosts = {"foo.com", "bar.com"},
                 }
             })
 
@@ -101,9 +101,9 @@ nil
             local radix = require("resty.radixtree")
             local rx = radix.new({
                 {
-                    path = "/aa*",
+                    paths = {"/aa*"},
                     metadata = "metadata /aa",
-                    host = {"foo.com", "*.bar.com"}
+                    hosts = {"foo.com", "*.bar.com"}
                 }
             })
 

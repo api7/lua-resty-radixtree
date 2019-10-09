@@ -71,12 +71,11 @@ ffi_cdef[[
     void *radix_tree_new();
     int radix_tree_destroy(void *t);
     int radix_tree_insert(void *t, const unsigned char *buf, size_t len,
-        void *data);
+        int idx);
     void *radix_tree_find(void *t, const unsigned char *buf, size_t len);
     void *radix_tree_search(void *t, void *it, const unsigned char *buf,
         size_t len);
-    void *radix_tree_pcre(void *it, const unsigned char *buf, size_t len);
-    void *radix_tree_next(void *it, const unsigned char *buf, size_t len);
+    int radix_tree_pcre(void *it, const unsigned char *buf, size_t len);
     int radix_tree_stop(void *it);
 
     void *radix_tree_new_it();
@@ -156,9 +155,8 @@ local function insert_route(self, opts)
     self.match_data_index = self.match_data_index + 1
     self.match_data[self.match_data_index] = {opts}
 
-    local dataptr = ffi_cast('void *', self.match_data_index)
-    radix.radix_tree_insert(self.tree, path, #path, dataptr)
-    log_info("insert route path: ", path, " dataprt: ", tostring(dataptr))
+    radix.radix_tree_insert(self.tree, path, #path, self.match_data_index)
+    log_info("insert route path: ", path, " dataprt: ", self.match_data_index)
     return true
 end
 
@@ -468,14 +466,11 @@ local function match_route(self, path, opts)
 
     while true do
         local data_idx = radix.radix_tree_pcre(it, path, #path)
-        log_info("path: ", path, " data_idx: ", tostring(data_idx))
-        if data_idx == nil then
+        if data_idx <= 0 then
             break
         end
 
-        local idx = tonumber(ffi_cast('intptr_t', data_idx))
-        routes = self.match_data[idx]
-        -- log_info("route: ", require("cjson").encode(routes))
+        routes = self.match_data[data_idx]
         if routes then
             local route = _match_from_routes(routes, path, opts)
             if route then

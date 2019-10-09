@@ -4,7 +4,7 @@ INST_LUADIR ?= $(INST_PREFIX)/share/lua/5.1
 INSTALL ?= install
 UNAME ?= $(shell uname)
 
-CFLAGS := -O2 -g -Wall -fpic -std=c99
+CFLAGS := -O2 -g -Wall -fpic -std=c99 -Wno-pointer-to-int-cast -Wno-int-to-pointer-cast
 
 C_SO_NAME := librestyradixtree.so
 LDFLAGS := -shared

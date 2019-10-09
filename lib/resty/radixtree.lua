@@ -235,6 +235,30 @@ local function pre_insert_route(self, path, route)
         route_opts.hosts = {host_is_wildcard, hosts}
     end
 
+    local uris = route.uris
+    if type(uris) == "table" and #uris > 0 then
+        route_opts.uris = {}
+        for _, uri in ipairs(uris) do
+            local is_wildcard = false
+            if uri and uri:sub(#uri, -1) == '*' then
+                is_wildcard = true
+                uri = uri:sub(1, -2)
+            end
+
+            insert_tab(route_opts.uris, is_wildcard)
+            insert_tab(route_opts.uris, uri)
+        end
+
+    elseif type(uris) == "string" then
+        local is_wildcard = false
+        if uris and uris:sub(#uris, -1) == '*' then
+            is_wildcard = true
+            uris = uris:sub(1, -2)
+        end
+
+        route_opts.uris = {is_wildcard, uris}
+    end
+
     if path:sub(#path) == "*" then
         path = path:sub(1, #path - 1)
         route_opts.path_op = "<="
@@ -321,6 +345,23 @@ local function match_host(route_host_is_wildcard, route_host, request_host)
     return true
 end
 
+local function match_uri(route_uri_is_wildcard, route_uri, request_uri)
+    if type(request_uri) ~= "string" or #route_uri > #request_uri then
+        return false
+    end
+
+    if not route_uri_is_wildcard then
+        return route_uri == request_uri
+    end
+
+    local i = request_uri:find(route_uri, 1, true)
+    if i ~= 1 then
+        return false
+    end
+
+    return true
+end
+
 local compare_funcs = {
     ["=="] = function (l_v, r_v)
         if type(r_v) == "number" then
@@ -379,7 +420,7 @@ local function match_route_opts(route, opts)
     if route.hosts then
         local matched = false
         local hosts = route.hosts
-        for i = 1, #route.hosts, 2 do
+        for i = 1, #hosts, 2 do
             if match_host(hosts[i], hosts[i + 1], opts.host) then
                 matched = true
                 break
@@ -387,6 +428,22 @@ local function match_route_opts(route, opts)
         end
 
         log_info("hosts match: ", matched)
+        if not matched then
+            return false
+        end
+    end
+
+    if route.uris then
+        local matched = false
+        local uris = route.uris
+        for i = 1, #uris, 2 do
+            if match_uri(uris[i], uris[i + 1], opts.uri) then
+                matched = true
+                break
+            end
+        end
+
+        log_info("uris match: ", matched)
         if not matched then
             return false
         end

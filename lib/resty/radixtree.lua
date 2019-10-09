@@ -465,12 +465,12 @@ local function match_route(self, path, opts)
     end
 
     while true do
-        local data_idx = radix.radix_tree_pcre(it, path, #path)
-        if data_idx <= 0 then
+        local idx = radix.radix_tree_pcre(it, path, #path)
+        if idx <= 0 then
             break
         end
 
-        routes = self.match_data[data_idx]
+        routes = self.match_data[idx]
         if routes then
             local route = _match_from_routes(routes, path, opts)
             if route then

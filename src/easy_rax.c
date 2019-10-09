@@ -57,13 +57,14 @@ radix_tree_find(void *t, const unsigned char *buf, size_t len)
 
 
 void *
-radix_tree_new_it()
+radix_tree_new_it(void *t)
 {
     raxIterator *it = malloc(sizeof(raxIterator));
     if (it == NULL) {
         return NULL;
     }
 
+    raxStart(it, (rax *)t);
     return (void *)it;
 }
 

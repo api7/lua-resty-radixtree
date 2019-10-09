@@ -19,6 +19,7 @@ Table of Contents
     * [dispatch](#dispatch)
 * [Install](#install)
 * [DEV ENV](#dev-env)
+* [Benchmark](#benchmark)
 
 Status
 ======

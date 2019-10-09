@@ -19,6 +19,7 @@ Table of Contents
     * [dispatch](#dispatch)
 * [Install](#install)
 * [DEV ENV](#dev-env)
+* [Benchmark](#benchmark)
 
 Status
 ======
@@ -148,3 +149,34 @@ DEV ENV
 ```
 make dev
 ```
+
+Benchmark
+=========
+
+This is a test example and the result, on my laptop, a single core CPU can match 1 million times in 1.4 seconds (based on 100,000 routes).
+
+```shell
+$ cat test.lua
+local radix = require("resty.radixtree")
+
+local routes = {}
+for i = 1, 1000 * 100 do
+    routes[i] = {paths = {"/" .. ngx.md5(i) .. "/*"}, metadata = i}
+end
+
+local rx = radix.new(routes)
+
+local res
+local uri = "/" .. ngx.md5(300) .. "/a"
+for _ = 1, 1000 * 1000 do
+    res = rx:match(uri)
+end
+
+ngx.say(res)
+
+$ time resty test.lua
+800
+resty test.lua  1.31s user 0.07s system 100% cpu 1.378 total
+```
+
+[Back to TOC](#table-of-contents)

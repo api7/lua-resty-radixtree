@@ -78,7 +78,7 @@ ffi_cdef[[
     int radix_tree_pcre(void *it, const unsigned char *buf, size_t len);
     int radix_tree_stop(void *it);
 
-    void *radix_tree_new_it();
+    void *radix_tree_new_it(void *t);
 ]]
 
 
@@ -290,8 +290,15 @@ function _M.new(routes)
 
     local route_n = #routes
 
+    local tree = radix.radix_tree_new()
+    local tree_it = radix.radix_tree_new_it(tree)
+    if tree_it == nil then
+        error("failed to new radixtree iterator")
+    end
+
     local self = setmt__gc({
-            tree = radix.radix_tree_new(),
+            tree = tree,
+            tree_it = tree_it,
             match_data_index = 0,
             match_data = new_tab(#routes, 0),
             hash_path = new_tab(0, #routes),
@@ -318,12 +325,18 @@ end -- do
 
 
 function _M.free(self)
-    if not self.tree then
-        return
+    local it = self.tree_it
+    if it then
+        radix.radix_tree_stop(it)
+        ffi.C.free(it)
+        self.tree_it = nil
     end
 
-    radix.radix_tree_destroy(self.tree)
-    self.tree = nil
+    if self.tree then
+        radix.radix_tree_destroy(self.tree)
+        self.tree = nil
+    end
+
     return
 end
 
@@ -481,13 +494,6 @@ local function match_route_opts(route, opts)
     return true
 end
 
-    local radix_it = radix.radix_tree_new_it()
-    if radix_it == nil then
-        error("failed to new radixtree it")
-    end
-    -- use gc to free
-    ffi.gc(radix_it, ffi.C.free)
-
 local function _match_from_routes(routes, path, opts)
     for _, route in ipairs(routes) do
         if route.path_op == "=" then
@@ -516,7 +522,7 @@ local function match_route(self, path, opts)
         end
     end
 
-    local it = radix.radix_tree_search(self.tree, radix_it, path, #path)
+    local it = radix.radix_tree_search(self.tree, self.tree_it, path, #path)
     if not it then
         return nil, "failed to match"
     end
@@ -531,13 +537,11 @@ local function match_route(self, path, opts)
         if routes then
             local route = _match_from_routes(routes, path, opts)
             if route then
-                radix.radix_tree_stop(it)
                 return route
             end
         end
     end
 
-    radix.radix_tree_stop(it)
     return nil
 end
 

@@ -151,30 +151,42 @@ make dev
 Benchmark
 =========
 
-This is a test example and the result, on my laptop, a single core CPU can match 1 million times in 1.4 seconds (based on 100,000 routes).
+We wrote some simple benchmark scripts.
+Machine environment: Macbook pro 2015 15-inch i7 2.8G CPU.
 
 ```shell
-$ cat test.lua
-local radix = require("resty.radixtree")
+$ make
+cc -O2 -g -Wall -fpic -std=c99 -Wno-pointer-to-int-cast -Wno-int-to-pointer-cast -DBUILDING_SO -c src/rax.c -o src/rax.o
+cc -O2 -g -Wall -fpic -std=c99 -Wno-pointer-to-int-cast -Wno-int-to-pointer-cast -DBUILDING_SO -c src/easy_rax.c -o src/easy_rax.o
+cc -shared -fvisibility=hidden src/rax.o src/easy_rax.o -o librestyradixtree.so
 
-local routes = {}
-for i = 1, 1000 * 100 do
-    routes[i] = {paths = {"/" .. ngx.md5(i) .. "/*"}, metadata = i}
-end
+$ resty -I./lib benchmark/match-static.lua
+matched res: 500
+route count: 100000
+match times: 1000000
+time used  : 0.089999914169312 sec
+QPS        : 11111121
 
-local rx = radix.new(routes)
+$ resty -I./lib benchmark/match-static.lua
+matched res: 500
+route count: 100000
+match times: 1000000
+time used  : 0.094000101089478 sec
+QPS        : 10638286
 
-local res
-local uri = "/" .. ngx.md5(300) .. "/a"
-for _ = 1, 1000 * 1000 do
-    res = rx:match(uri)
-end
+$ resty -I./lib benchmark/match-prefix.lua
+matched res: 500
+route count: 100000
+match times: 1000000
+time used  : 0.85500001907349 sec
+QPS        : 1169590
 
-ngx.say(res)
-
-$ time resty test.lua
-800
-resty test.lua  1.31s user 0.07s system 100% cpu 1.378 total
+$ resty -I./lib benchmark/match-prefix.lua
+matched res: 500
+route count: 100000
+match times: 1000000
+time used  : 0.83500003814697 sec
+QPS        : 1197604
 ```
 
 [Back to TOC](#table-of-contents)

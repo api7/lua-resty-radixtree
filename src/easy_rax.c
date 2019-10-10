@@ -77,7 +77,6 @@ radix_tree_search(void *t, void *it, const unsigned char *buf, size_t len)
         return NULL;
     }
 
-    raxStart(iter, t);
     raxSeek(iter, "<=", (unsigned char *)buf, len);
     return (void *)iter;
 }

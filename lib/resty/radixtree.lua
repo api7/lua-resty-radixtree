@@ -215,24 +215,29 @@ local function pre_insert_route(self, path, route)
     if type(hosts) == "table" and #hosts > 0 then
         route_opts.hosts = {}
         for _, h in ipairs(hosts) do
-            local host_is_wildcard = false
+            local is_wildcard = false
             if h and h:sub(1, 1) == '*' then
-                host_is_wildcard = true
+                is_wildcard = true
                 h = h:sub(2):reverse()
+            else
+                h = h:reverse()
             end
 
-            insert_tab(route_opts.hosts, host_is_wildcard)
+            insert_tab(route_opts.hosts, is_wildcard)
             insert_tab(route_opts.hosts, h)
         end
 
     elseif type(hosts) == "string" then
-        local host_is_wildcard = false
-        if hosts and hosts:sub(1, 1) == '*' then
-            host_is_wildcard = true
-            hosts = hosts:sub(2):reverse()
+        local is_wildcard = false
+        local host = hosts
+        if host:sub(1, 1) == '*' then
+            is_wildcard = true
+            host = host:sub(2):reverse()
+        else
+            host = host:reverse()
         end
 
-        route_opts.hosts = {host_is_wildcard, hosts}
+        route_opts.hosts = {is_wildcard, host}
     end
 
     local uris = route.uris
@@ -350,7 +355,7 @@ local function match_host(route_host_is_wildcard, route_host, request_host)
         return route_host == request_host
     end
 
-    local i = request_host:reverse():find(route_host, 1, true)
+    local i = request_host:find(route_host, 1, true)
     if i ~= 1 then
         return false
     end
@@ -432,11 +437,19 @@ local function match_route_opts(route, opts)
     -- log_info("route.hosts: ", type(route.hosts))
     if route.hosts then
         local matched = false
+
+        if opts.host and not opts.host_reversed then
+            opts.host_reversed = opts.host:reverse()
+        end
+
         local hosts = route.hosts
-        for i = 1, #hosts, 2 do
-            if match_host(hosts[i], hosts[i + 1], opts.host) then
-                matched = true
-                break
+        local reverse_host = opts.host_reversed
+        if reverse_host then
+            for i = 1, #hosts, 2 do
+                if match_host(hosts[i], hosts[i + 1], reverse_host) then
+                    matched = true
+                    break
+                end
             end
         end
 

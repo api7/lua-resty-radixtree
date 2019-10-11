@@ -24,6 +24,7 @@ local tostring    = tostring
 local cur_level   = ngx.config.subsystem == "http" and
                     require("ngx.errlog").get_sys_filter_level()
 local ngx_var     = ngx.var
+local re_find     = ngx.re.find
 
 
 local function load_shared_lib(so_name)
@@ -127,7 +128,7 @@ local mt = { __index = _M, __gc = gc_free }
 
 
 local function insert_route(self, opts)
-    local path    = opts.path
+    local path = opts.path
     opts = clone_tab(opts)
 
     if not self.disable_path_cache_opt
@@ -405,7 +406,15 @@ local compare_funcs = {
         end
         return l_v < r_v
     end,
+    ["~~"] = function (l_v, r_v)
+        local from = re_find(l_v, r_v, "jo")
+        if from then
+            return true
+        end
+        return false
+    end,
 }
+
 
 local function compare_val(l_v, op, r_v)
     local com_fun = compare_funcs[op or "=="]

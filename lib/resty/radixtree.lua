@@ -1,4 +1,5 @@
 -- Copyright (C) Yuansheng Wang
+
 local ipmatcher   = require("resty.ipmatcher")
 local base        = require("resty.core.base")
 local clear_tab   = require("table.clear")
@@ -7,7 +8,7 @@ local bit         = require("bit")
 local new_tab     = base.new_tab
 local tonumber    = tonumber
 local ipairs      = ipairs
-local ffi         = require "ffi"
+local ffi         = require("ffi")
 local ffi_cast    = ffi.cast
 local ffi_cdef    = ffi.cdef
 local insert_tab  = table.insert
@@ -21,7 +22,7 @@ local error       = error
 local newproxy    = newproxy
 local tostring    = tostring
 local cur_level   = ngx.config.subsystem == "http" and
-                    require "ngx.errlog" .get_sys_filter_level()
+                    require("ngx.errlog").get_sys_filter_level()
 local ngx_var     = ngx.var
 
 
@@ -179,10 +180,11 @@ local function parse_remote_addr(route_remote_addrs)
 end
 
 
+local pre_insert_route
 do
     local route_opts = {}
 
-local function pre_insert_route(self, path, route)
+function pre_insert_route(self, path, route)
     if type(path) ~= "string" then
         error("invalid argument path", 2)
     end
@@ -288,6 +290,9 @@ local function pre_insert_route(self, path, route)
     insert_route(self, route_opts)
 end
 
+end -- do
+
+
 function _M.new(routes)
     if not routes then
         return nil, "missing argument route"
@@ -325,8 +330,6 @@ function _M.new(routes)
 
     return self
 end
-
-end -- do
 
 
 function _M.free(self)

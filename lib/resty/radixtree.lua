@@ -359,13 +359,19 @@ local function match_host(route_host_is_wildcard, route_host, request_host)
         return route_host == request_host
     end
 
-    local i = request_host:find(route_host, 1, true)
-    if i ~= 1 then
+    local from, to = request_host:find(route_host, 1, true)
+    if from ~= 1 then
+        return false
+    end
+
+    from = request_host:sub(to + 1):find(".", 1, true)
+    if from then
         return false
     end
 
     return true
 end
+
 
 local function match_uri(route_uri_is_wildcard, route_uri, request_uri)
     if type(request_uri) ~= "string" or #route_uri > #request_uri then

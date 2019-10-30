@@ -406,3 +406,42 @@ GET /t?k=xxxx
 [error]
 --- response_body
 metadata /aa2
+
+
+
+=== TEST 15: uri args
+--- config
+    location /t {
+        content_by_lua_block {
+            local radix = require("resty.radixtree")
+            local routes = {}
+            for i, reg in ipairs({"[0-9]+", "^1[0-9]+", "[1-3]+", "^[1-3]+",
+                                  "^2[0-9]+", "[1-3]+$", "[a-z]+", "[0"}) do
+                routes[i] = {
+                    paths = "/" .. i,
+                    metadata = "metadata /" .. i,
+                    vars = {
+                        {"arg_k", "~~", reg},
+                    }
+                }
+            end
+            local rx = radix.new(routes)
+
+            for i =1, 8 do
+                ngx.say(rx:match("/" .. i, {vars = ngx.var}))
+            end
+        }
+    }
+--- request
+GET /t?k=1234
+--- no_error_log
+[error]
+--- response_body
+metadata /1
+metadata /2
+metadata /3
+metadata /4
+nil
+nil
+nil
+nil

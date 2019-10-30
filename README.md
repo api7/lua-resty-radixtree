@@ -77,12 +77,22 @@ The attributes of each element may contain these:
 |uris      |option  |A list of client request uris, not only supports static uri, but also supports prefix uri.|{"/foo", "/bar/*"}|
 |remote_addrs|option  |A list of client remote address(IPv4 and IPv6), and we can use CIDR format, eg `192.168.1.0/24`.|{"127.0.0.1", "192.0.0.0/8", "::1", "fe80::/32"}|
 |methods    |option  |A list of method name. Here is full valid method list: "GET", "POST", "PUT", "DELETE", "PATCH", "HEAD", "OPTIONS", "CONNECT" and "TRACE".|{"GET", "POST"}|
-|vars       |option  |A list of `{var, operator, val}`. For example: {{var, operator, val}, {var, operator, val}, ...}, `{"arg_name", "==", "json"}` means the value of argument `name` expect to `json`.|{{"arg_name", "==", "json"}, {"arg_age", ">", 18}}|
+|vars       |option  |A list of `{var, operator, val}`. For example: {{var, operator, val}, {var, operator, val}, ...}, `{"arg_name", "==", "json"}` means the value of argument `name` expect to `json`. Here is the full [Operator List](#operator-list).|{{"arg_name", "==", "json"}, {"arg_age", ">", 18}}|
 |filter_fun |option  |User defined filter function, We can use it to achieve matching logic for special scenes. `radixtree` will only pass one parameter which named `vars` when matching route.|function(vars) return vars["arg_name"] == "json" end|
 |metadata   |option  |Will return this field if using `rx:match` to match route.||
 |handler    |option  |Will call this function using `rx:dispatch` to match route.||
-[Back to TOC](#table-of-contents)
 
+#### Operator List
+
+|operator|description|example|
+|--------|-----------|-------|
+|==      |equal      |{"arg_name", "==", "json"}|
+|~=      |not equal  |{"arg_name", "~=", "json"}|
+|>       |greater than|{"arg_age", ">", 24}|
+|<       |less than  |{"arg_age", "<", 24}|
+|~~      |Regular match|{"arg_name", "~~", "[a-z]+"}|
+
+[Back to TOC](#table-of-contents)
 
 match
 -----

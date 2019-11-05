@@ -13,6 +13,7 @@ local ffi_cast    = ffi.cast
 local ffi_cdef    = ffi.cdef
 local insert_tab  = table.insert
 local string      = string
+local str_len     = string.len
 local io          = io
 local package     = package
 local getmetatable=getmetatable
@@ -162,6 +163,41 @@ local function insert_route(self, opts)
     return true
 end
 
+local function insert_route_with_host(self, opts)
+    local path = opts.path
+    opts = clone_tab(opts)
+
+    if not self.disable_path_cache_opt
+       and opts.path_op == '=' then
+
+        if not self.hash_path_with_host[path] then
+            self.hash_path_with_host[path] = {opts}
+        else
+            insert_tab(self.hash_path_with_host[path], opts)
+        end
+
+        return true
+    end
+
+    local data_idx = radix.radix_tree_find(self.tree_with_host, path, #path)
+    log_info("find: ", path, " matched: ", tostring(data_idx))
+    if data_idx then
+        local idx = tonumber(ffi_cast('intptr_t', data_idx))
+        local routes = self.match_data_with_host[idx]
+        if routes and routes[1].path == path then
+            insert_tab(routes, opts)
+            return true
+        end
+    end
+
+    self.match_data_index_with_host = self.match_data_index_with_host + 1
+    self.match_data_with_host[self.match_data_index_with_host] = {opts}
+
+    radix.radix_tree_insert(self.tree_with_host, path, #path, self.match_data_index_with_host)
+    log_info("insert route path: ", path, " dataprt: ", self.match_data_index_with_host)
+    return true
+end
+
 
 local function parse_remote_addr(route_remote_addrs)
     if not route_remote_addrs then
@@ -288,7 +324,12 @@ function pre_insert_route(self, path, route)
         error("invalid IP address: " .. err, 2)
     end
 
-    insert_route(self, route_opts)
+
+    if route_opts.hosts and #route_opts.hosts>0 then
+        insert_route_with_host(self, route_opts)
+    else
+        insert_route(self, route_opts)
+    end
 end
 
 end -- do
@@ -307,13 +348,44 @@ function _M.new(routes)
         error("failed to new radixtree iterator")
     end
 
+    local tree_with_host = radix.radix_tree_new()
+    local tree_it_with_host = radix.radix_tree_new_it(tree_with_host)
+    if tree_it_with_host == nil then
+        error("failed to new radixtree iterator")
+    end
+
+
     local self = setmt__gc({
             tree = tree,
             tree_it = tree_it,
             match_data_index = 0,
             match_data = new_tab(#routes, 0),
             hash_path = new_tab(0, #routes),
+
+            tree_with_host = tree_with_host,
+            tree_it_with_host = tree_it_with_host,
+            match_data_index_with_host = 0,
+            match_data_with_host = new_tab(#routes, 0),
+            hash_path_with_host = new_tab(0, #routes),
         }, mt)
+
+    -- order by hosts max length, so that qqq.foo.bar.com match *.foo.bar.com not *.bar.com
+    local _get_hosts_max_item_length = function(hosts)
+        local hosts_len = 0
+        if hosts and #hosts>0 then
+            for _,host_item in ipairs(hosts) do
+                local host_len = str_len(host_item)
+                if host_len > hosts_len then
+                    hosts_len = host_len
+                end
+            end
+        end
+        return hosts_len
+    end
+
+    table.sort(routes,function(a,b)
+          return _get_hosts_max_item_length(a.hosts) > _get_hosts_max_item_length(b.hosts)
+    end)
 
     -- register routes
     for i = 1, route_n do
@@ -344,6 +416,18 @@ function _M.free(self)
     if self.tree then
         radix.radix_tree_destroy(self.tree)
         self.tree = nil
+    end
+
+    it = self.tree_it_with_host
+    if it then
+        radix.radix_tree_stop(it)
+        ffi.C.free(it)
+        self.tree_it_with_host = nil
+    end
+
+    if self.tree_with_host then
+        radix.radix_tree_destroy(self.tree_with_host)
+        self.tree_with_host = nil
     end
 
     return
@@ -537,7 +621,51 @@ local function _match_from_routes(routes, path, opts)
     return nil
 end
 
+local function match_route_with_host(self, path, opts)
+    local routes = self.hash_path_with_host[path]
+    if routes then
+        for _, route in ipairs(routes) do
+            if match_route_opts(route, opts) then
+                return route
+            end
+        end
+    end
+
+    local it = radix.radix_tree_search(self.tree_with_host, self.tree_it_with_host, path, #path)
+    if not it then
+        return nil, "failed to match"
+    end
+
+    while true do
+        local idx = radix.radix_tree_pcre(it, path, #path)
+        if idx <= 0 then
+            break
+        end
+
+        routes = self.match_data_with_host[idx]
+
+ 
+        if routes then
+            local route = _match_from_routes(routes, path, opts)
+            if route then
+                return route
+            end
+        end
+    end
+
+    return nil
+end
+
+
 local function match_route(self, path, opts)
+
+    if opts.host then
+        local res   =   match_route_with_host(self, path, opts)
+        if res then
+            return  res
+        end
+    end
+
     local routes = self.hash_path[path]
     if routes then
         for _, route in ipairs(routes) do

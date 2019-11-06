@@ -373,6 +373,7 @@ local function match_host(route_host_is_wildcard, route_host, request_host)
     return true
 end
 
+
 local function match_uri(route_uri_is_wildcard, route_uri, request_uri)
     if type(request_uri) ~= "string" or #route_uri > #request_uri then
         return false
@@ -389,6 +390,7 @@ local function match_uri(route_uri_is_wildcard, route_uri, request_uri)
 
     return true
 end
+
 
 local compare_funcs = {
     ["=="] = function (l_v, r_v)
@@ -431,7 +433,7 @@ local function compare_val(l_v, op, r_v)
 end
 
 
-local function match_route_opts(route, opts)
+local function match_route_opts(route, opts, ctx)
     local method = opts.method
     if route.method ~= 0 then
         if not method or type(METHODS[method]) ~= "number" or
@@ -517,7 +519,7 @@ local function match_route_opts(route, opts)
     end
 
     if route.filter_fun then
-        if not route.filter_fun(opts.vars or ngx_var) then
+        if not route.filter_fun(opts.vars or ngx_var, ctx) then
             return false
         end
     end
@@ -526,31 +528,30 @@ local function match_route_opts(route, opts)
 end
 
 
-local function _match_from_routes(routes, path, opts)
+local function _match_from_routes(routes, path, opts, ctx)
     for _, route in ipairs(routes) do
         if route.path_op == "=" then
             if route.path == path then
-                if match_route_opts(route, opts) then
+                if match_route_opts(route, opts, ctx) then
                     return route
                 end
             end
 
         else
-            if match_route_opts(route, opts) then
+            if match_route_opts(route, opts, ctx) then
                 return route
             end
         end
     end
-
     return nil
 end
 
 
-local function match_route(self, path, opts)
+local function match_route(self, path, opts, ctx)
     local routes = self.hash_path[path]
     if routes then
         for _, route in ipairs(routes) do
-            if match_route_opts(route, opts) then
+            if match_route_opts(route, opts, ctx) then
                 return route
             end
         end
@@ -569,7 +570,7 @@ local function match_route(self, path, opts)
 
         routes = self.match_data[idx]
         if routes then
-            local route = _match_from_routes(routes, path, opts)
+            local route = _match_from_routes(routes, path, opts, ctx)
             if route then
                 return route
             end
@@ -579,13 +580,12 @@ local function match_route(self, path, opts)
     return nil
 end
 
-
-function _M.match(self, path, opts)
+function _M.match(self, path, opts, ctx)
     if type(path) ~= "string" then
         error("invalid argument path", 2)
     end
 
-    local route, err = match_route(self, path, opts or empty_table)
+    local route, err = match_route(self, path, opts or empty_table, ctx)
     if not route then
         if err then
             return nil, err
@@ -597,12 +597,12 @@ function _M.match(self, path, opts)
 end
 
 
-function _M.dispatch(self, path, opts, ...)
+function _M.dispatch(self, path, opts, ctx, ...)
     if type(path) ~= "string" then
         error("invalid argument path", 2)
     end
 
-    local route, err = match_route(self, path, opts or empty_table)
+    local route, err = match_route(self, path, opts or empty_table, ctx)
     if not route then
         if err then
             return nil, err
@@ -615,7 +615,7 @@ function _M.dispatch(self, path, opts, ...)
         return nil, "missing handler"
     end
 
-    handler(...)
+    handler(ctx, ...)
     return true
 end
 

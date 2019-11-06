@@ -13,7 +13,6 @@ local ffi_cast    = ffi.cast
 local ffi_cdef    = ffi.cdef
 local insert_tab  = table.insert
 local string      = string
-local str_len     = string.len
 local io          = io
 local package     = package
 local getmetatable=getmetatable
@@ -167,8 +166,7 @@ local function insert_route_with_host(self, opts)
     local path = opts.path
     opts = clone_tab(opts)
 
-    if not self.disable_path_cache_opt
-       and opts.path_op == '=' then
+    if not self.disable_path_cache_opt and opts.path_op == '=' then
 
         if not self.hash_path_with_host[path] then
             self.hash_path_with_host[path] = {opts}
@@ -325,7 +323,7 @@ function pre_insert_route(self, path, route)
     end
 
 
-    if route_opts.hosts and #route_opts.hosts>0 then
+    if route_opts.hosts and #route_opts.hosts > 0 then
         insert_route_with_host(self, route_opts)
     else
         insert_route(self, route_opts)
@@ -374,7 +372,7 @@ function _M.new(routes)
         local hosts_len = 0
         if hosts and #hosts>0 then
             for _,host_item in ipairs(hosts) do
-                local host_len = str_len(host_item)
+                local host_len = #host_item
                 if host_len > hosts_len then
                     hosts_len = host_len
                 end
@@ -383,7 +381,7 @@ function _M.new(routes)
         return hosts_len
     end
 
-    table.sort(routes,function(a,b)
+    table.sort(routes, function(a,b)
           return _get_hosts_max_item_length(a.hosts) > _get_hosts_max_item_length(b.hosts)
     end)
 
@@ -642,9 +640,7 @@ local function match_route_with_host(self, path, opts)
             break
         end
 
-        routes = self.match_data_with_host[idx]
-
- 
+        routes = self.match_data_with_host[idx] 
         if routes then
             local route = _match_from_routes(routes, path, opts)
             if route then
@@ -658,7 +654,6 @@ end
 
 
 local function match_route(self, path, opts)
-
     if opts.host then
         local res   =   match_route_with_host(self, path, opts)
         if res then

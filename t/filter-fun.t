@@ -75,20 +75,20 @@ nil
 --- config
     location /t {
         content_by_lua_block {
-            local tmp_ctx = {}
+            local opts = {vars = ngx.var}
             local radix = require("resty.radixtree")
             local rx = radix.new({
                 {
                     paths = "/aa",
                     metadata = "metadata /aa",
-                    filter_fun = function(vars, ctx)
-                        ngx.log(ngx.WARN, "start to filter, ctx: ", tmp_ctx == ctx)
+                    filter_fun = function(vars, opt)
+                        ngx.log(ngx.WARN, "start to filter, opt: ", opts == opt)
                         return vars['arg_k'] == 'v'
                     end
                 }
             })
 
-            ngx.say(rx:match("/aa", {vars = ngx.var}, tmp_ctx))
+            ngx.say(rx:match("/aa", opts, tmp_ctx))
             ngx.say(rx:match("/aa", {}))
         }
     }
@@ -97,8 +97,8 @@ GET /t?k=v
 --- no_error_log
 [error]
 --- error_log
-start to filter, ctx: true
-start to filter, ctx: false
+start to filter, opt: true
+start to filter, opt: false
 --- response_body
 metadata /aa
 metadata /aa
@@ -109,13 +109,13 @@ metadata /aa
 --- config
     location /t {
         content_by_lua_block {
-            local tmp_ctx = {}
+            local opts = {vars = ngx.var}
             local radix = require("resty.radixtree")
             local rx = radix.new({
                 {
                     paths = "/aa",
-                    filter_fun = function(vars, ctx)
-                        ngx.log(ngx.WARN, "start to filter, ctx: ", tmp_ctx == ctx)
+                    filter_fun = function(vars, opt)
+                        ngx.log(ngx.WARN, "start to filter, ctx: ", opt == opts)
                         return vars['arg_k'] == 'v'
                     end,
                     handler = function (ctx)
@@ -124,7 +124,7 @@ metadata /aa
                 }
             })
 
-            ngx.say(rx:dispatch("/aa", {vars = ngx.var}, tmp_ctx))
+            ngx.say(rx:dispatch("/aa", opts))
             ngx.say(rx:dispatch("/aa", {}))
         }
     }

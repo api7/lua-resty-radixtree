@@ -39,7 +39,7 @@ Synopsis
                     {"arg_name", "==", "json"},
                     {"arg_weight", ">", 10},
                 },
-                filter_fun = function(vars)
+                filter_fun = function(vars, opts)
                     return vars["arg_name"] == "json"
                 end,
 
@@ -78,7 +78,7 @@ The attributes of each element may contain these:
 |remote_addrs|option  |A list of client remote address(IPv4 and IPv6), and we can use CIDR format, eg `192.168.1.0/24`.|{"127.0.0.1", "192.0.0.0/8", "::1", "fe80::/32"}|
 |methods    |option  |A list of method name. Here is full valid method list: "GET", "POST", "PUT", "DELETE", "PATCH", "HEAD", "OPTIONS", "CONNECT" and "TRACE".|{"GET", "POST"}|
 |vars       |option  |A list of `{var, operator, val}`. For example: {{var, operator, val}, {var, operator, val}, ...}, `{"arg_name", "==", "json"}` means the value of argument `name` expect to `json`. Here is the full [Operator List](#operator-list).|{{"arg_name", "==", "json"}, {"arg_age", ">", 18}}|
-|filter_fun |option  |User defined filter function, We can use it to achieve matching logic for special scenes. `radixtree` will only pass one parameter which named `vars` when matching route.|function(vars) return vars["arg_name"] == "json" end|
+|filter_fun |option  |User defined filter function, We can use it to achieve matching logic for special scenes. `radixtree` will argument `vars` and `opts` when matching route.|function(vars) return vars["arg_name"] == "json" end|
 |metadata   |option  |Will return this field if using `rx:match` to match route.||
 |handler    |option  |Will call this function using `rx:dispatch` to match route.||
 

@@ -71,7 +71,7 @@ nil
 
 
 
-=== TEST 3: match(..., ctx)
+=== TEST 3: match(path, opts)
 --- config
     location /t {
         content_by_lua_block {
@@ -81,14 +81,14 @@ nil
                 {
                     paths = "/aa",
                     metadata = "metadata /aa",
-                    filter_fun = function(vars, opt)
+                    filter_fun = function(vars, opt, ...)
                         ngx.log(ngx.WARN, "start to filter, opt: ", opts == opt)
                         return vars['arg_k'] == 'v'
                     end
                 }
             })
 
-            ngx.say(rx:match("/aa", opts, tmp_ctx))
+            ngx.say(rx:match("/aa", opts))
             ngx.say(rx:match("/aa", {}))
         }
     }
@@ -105,7 +105,7 @@ metadata /aa
 
 
 
-=== TEST 4: dispatch(..., ctx)
+=== TEST 4: dispatch(path, opt, ...)
 --- config
     location /t {
         content_by_lua_block {
@@ -114,11 +114,11 @@ metadata /aa
             local rx = radix.new({
                 {
                     paths = "/aa",
-                    filter_fun = function(vars, opt)
-                        ngx.log(ngx.WARN, "start to filter, ctx: ", opt == opts)
+                    filter_fun = function(vars, opt, ...)
+                        ngx.log(ngx.WARN, "start to filter, opt: ", opt == opts)
                         return vars['arg_k'] == 'v'
                     end,
-                    handler = function (ctx)
+                    handler = function (...)
                         ngx.say("handler /aa")
                     end,
                 }
@@ -133,8 +133,8 @@ GET /t?k=v
 --- no_error_log
 [error]
 --- error_log
-start to filter, ctx: true
-start to filter, ctx: false
+start to filter, opt: true
+start to filter, opt: false
 --- response_body
 handler /aa
 true

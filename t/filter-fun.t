@@ -68,3 +68,75 @@ start to filter
 --- response_body
 nil
 nil
+
+
+
+=== TEST 3: match(path, opts)
+--- config
+    location /t {
+        content_by_lua_block {
+            local opts = {vars = ngx.var}
+            local radix = require("resty.radixtree")
+            local rx = radix.new({
+                {
+                    paths = "/aa",
+                    metadata = "metadata /aa",
+                    filter_fun = function(vars, opt, ...)
+                        ngx.log(ngx.WARN, "start to filter, opt: ", opts == opt)
+                        return vars['arg_k'] == 'v'
+                    end
+                }
+            })
+
+            ngx.say(rx:match("/aa", opts))
+            ngx.say(rx:match("/aa", {}))
+        }
+    }
+--- request
+GET /t?k=v
+--- no_error_log
+[error]
+--- error_log
+start to filter, opt: true
+start to filter, opt: false
+--- response_body
+metadata /aa
+metadata /aa
+
+
+
+=== TEST 4: dispatch(path, opt, ...)
+--- config
+    location /t {
+        content_by_lua_block {
+            local opts = {vars = ngx.var}
+            local radix = require("resty.radixtree")
+            local rx = radix.new({
+                {
+                    paths = "/aa",
+                    filter_fun = function(vars, opt, ...)
+                        ngx.log(ngx.WARN, "start to filter, opt: ", opt == opts)
+                        return vars['arg_k'] == 'v'
+                    end,
+                    handler = function (...)
+                        ngx.say("handler /aa")
+                    end,
+                }
+            })
+
+            ngx.say(rx:dispatch("/aa", opts))
+            ngx.say(rx:dispatch("/aa", {}))
+        }
+    }
+--- request
+GET /t?k=v
+--- no_error_log
+[error]
+--- error_log
+start to filter, opt: true
+start to filter, opt: false
+--- response_body
+handler /aa
+true
+handler /aa
+true

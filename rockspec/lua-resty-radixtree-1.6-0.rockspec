@@ -1,8 +1,8 @@
 package = "lua-resty-radixtree"
-version = "0.8-0"
+version = "1.6-0"
 source = {
     url = "git://github.com/iresty/lua-resty-radixtree",
-    tag = "v0.8",
+    tag = "v1.6",
 }
 
 description = {
@@ -19,7 +19,7 @@ dependencies = {
 build = {
     type = "make",
     build_variables = {
-            CFLAGS="$(CFLAGS) -std=c99 -g",
+            CFLAGS="$(CFLAGS) -std=c99 -g -Wno-pointer-to-int-cast -Wno-int-to-pointer-cast",
             LIBFLAG="$(LIBFLAG)",
             LUA_LIBDIR="$(LUA_LIBDIR)",
             LUA_BINDIR="$(LUA_BINDIR)",

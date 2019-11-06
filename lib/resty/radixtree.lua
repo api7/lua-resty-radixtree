@@ -25,6 +25,12 @@ local cur_level   = ngx.config.subsystem == "http" and
                     require("ngx.errlog").get_sys_filter_level()
 local ngx_var     = ngx.var
 local re_find     = ngx.re.find
+local empty_table = {}
+
+
+setmetatable(empty_table, {__newindex = function()
+    error("empty_table can not be changed")
+end})
 
 
 local function load_shared_lib(so_name)
@@ -601,6 +607,7 @@ local function match_route_opts(route, opts)
     return true
 end
 
+
 local function _match_from_routes(routes, path, opts)
     for _, route in ipairs(routes) do
         if route.path_op == "=" then
@@ -616,8 +623,10 @@ local function _match_from_routes(routes, path, opts)
             end
         end
     end
+
     return nil
 end
+
 
 local function match_route_with_host(self, path, opts)
     local routes = self.hash_path_with_host[path]
@@ -693,7 +702,7 @@ local function match_route(self, path, opts)
     return nil
 end
 
-    local empty_table = {}
+
 function _M.match(self, path, opts)
     if type(path) ~= "string" then
         error("invalid argument path", 2)
@@ -732,5 +741,6 @@ function _M.dispatch(self, path, opts, ...)
     handler(...)
     return true
 end
+
 
 return _M

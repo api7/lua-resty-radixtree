@@ -433,7 +433,7 @@ local function compare_val(l_v, op, r_v)
 end
 
 
-local function match_route_opts(route, opts)
+local function match_route_opts(route, opts, ...)
     local method = opts.method
     if route.method ~= 0 then
         if not method or type(METHODS[method]) ~= "number" or
@@ -519,7 +519,7 @@ local function match_route_opts(route, opts)
     end
 
     if route.filter_fun then
-        if not route.filter_fun(opts.vars or ngx_var, opts) then
+        if not route.filter_fun(opts.vars or ngx_var, opts, ...) then
             return false
         end
     end
@@ -528,17 +528,17 @@ local function match_route_opts(route, opts)
 end
 
 
-local function _match_from_routes(routes, path, opts)
+local function _match_from_routes(routes, path, opts, ...)
     for _, route in ipairs(routes) do
         if route.path_op == "=" then
             if route.path == path then
-                if match_route_opts(route, opts) then
+                if match_route_opts(route, opts, ...) then
                     return route
                 end
             end
 
         else
-            if match_route_opts(route, opts) then
+            if match_route_opts(route, opts, ...) then
                 return route
             end
         end
@@ -547,11 +547,11 @@ local function _match_from_routes(routes, path, opts)
 end
 
 
-local function match_route(self, path, opts)
+local function match_route(self, path, opts, ...)
     local routes = self.hash_path[path]
     if routes then
         for _, route in ipairs(routes) do
-            if match_route_opts(route, opts) then
+            if match_route_opts(route, opts, ...) then
                 return route
             end
         end
@@ -570,7 +570,7 @@ local function match_route(self, path, opts)
 
         routes = self.match_data[idx]
         if routes then
-            local route = _match_from_routes(routes, path, opts)
+            local route = _match_from_routes(routes, path, opts, ...)
             if route then
                 return route
             end
@@ -602,7 +602,7 @@ function _M.dispatch(self, path, opts, ...)
         error("invalid argument path", 2)
     end
 
-    local route, err = match_route(self, path, opts or empty_table)
+    local route, err = match_route(self, path, opts or empty_table, ...)
     if not route then
         if err then
             return nil, err

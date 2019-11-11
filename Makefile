@@ -61,11 +61,11 @@ install:
 .PHONY: dev
 dev:
 ifeq ($(UNAME),Darwin)
-	luarocks install --lua-dir=$(LUA_JIT_DIR) rockspec/lua-resty-radixtree-dev-1.0-0.rockspec --only-deps
+	luarocks install --lua-dir=$(LUA_JIT_DIR) rockspec/lua-resty-radixtree-master-1.0-0.rockspec --only-deps
 else ifneq ($(LUAROCKS_VER),'luarocks 3.')
-	luarocks install rockspec/lua-resty-radixtree-dev-1.0-0.rockspec --only-deps
+	luarocks install rockspec/lua-resty-radixtree-master-1.0-0.rockspec --only-deps
 else
-	luarocks install --lua-dir=/usr/local/openresty/luajit rockspec/lua-resty-radixtree-dev-1.0-0.rockspec --only-deps
+	luarocks install --lua-dir=/usr/local/openresty/luajit rockspec/lua-resty-radixtree-master-1.0-0.rockspec --only-deps
 endif
 
 

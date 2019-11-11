@@ -1,8 +1,8 @@
-package = "lua-resty-radixtree-dev"
-version = "1.0-0"
+package = "lua-resty-radixtree"
+version = "1.6-1"
 source = {
     url = "git://github.com/iresty/lua-resty-radixtree",
-    branch = "master",
+    tag = "v1.6",
 }
 
 description = {
@@ -13,13 +13,13 @@ description = {
 }
 
 dependencies = {
-    "lua-resty-ipmatcher = 0.2",
+    "lua-resty-ipmatcher >= 0.3",
 }
 
 build = {
     type = "make",
     build_variables = {
-            CFLAGS="$(CFLAGS) -std=c99 -g",
+            CFLAGS="$(CFLAGS) -std=c99 -g -Wno-pointer-to-int-cast -Wno-int-to-pointer-cast",
             LIBFLAG="$(LIBFLAG)",
             LUA_LIBDIR="$(LUA_LIBDIR)",
             LUA_BINDIR="$(LUA_BINDIR)",

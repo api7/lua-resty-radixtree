@@ -85,7 +85,6 @@ nil
                 },
             })
 
-            ngx.say(rx:match("/equal"))
             ngx.say(rx:match("/equal1"))
             ngx.say(rx:match("/equal12"))
             ngx.say(rx:match("/equal123"))
@@ -97,7 +96,6 @@ GET /t
 --- no_error_log
 [error]
 --- response_body
-metadata multipe path 1
 metadata multipe path 1
 metadata multipe path 1
 metadata multipe path 2

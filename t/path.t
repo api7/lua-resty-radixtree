@@ -67,3 +67,36 @@ metadata multipe path 1
 metadata multipe path 2
 nil
 nil
+
+
+=== TEST 3: multiple path with overlap
+--- config
+    location /t {
+        content_by_lua_block {
+            local radix = require("resty.radixtree")
+            local rx = radix.new({
+                {
+                    paths = {"/equal*"},
+                    metadata = "metadata multipe path 1",
+                },
+                {
+                    paths = {"/equal123*"},
+                    metadata = "metadata multipe path 2",
+                },
+            })
+
+            ngx.say(rx:match("/equal1"))
+            ngx.say(rx:match("/equal12"))
+            ngx.say(rx:match("/equal123"))
+            ngx.say(rx:match("/equal1234"))
+        }
+    }
+--- request
+GET /t
+--- no_error_log
+[error]
+--- response_body
+metadata multipe path 1
+metadata multipe path 1
+metadata multipe path 2
+metadata multipe path 2

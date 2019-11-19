@@ -13,7 +13,7 @@ description = {
 }
 
 dependencies = {
-    "lua-resty-ipmatcher = 0.3",
+    "lua-resty-ipmatcher",
 }
 
 build = {

@@ -7,6 +7,10 @@ This is Lua-Openresty implementation library base on FFI for [rax](https://githu
 
 This project depends on [lua-resty-ipmatcher](https://github.com/iresty/lua-resty-ipmatcher).
 
+This project has been working in projects microservices API gateway [Apache APISIX](https://github.com/apache/incubator-apisix).
+
+The project is open sourced by Shenzhen [ZhiLiu](https://www.iresty.com/) Technology Company. In addition to this open source version, our company also provides a more powerful and performing commercial version, and provides technical support. If you are interested in our commercial version, please contact us. email: [yuansheng@iresty.com](yuansheng@iresty.com) .
+
 Table of Contents
 =================
 

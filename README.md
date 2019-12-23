@@ -7,7 +7,7 @@ This is Lua-Openresty implementation library base on FFI for [rax](https://githu
 
 This project depends on [lua-resty-ipmatcher](https://github.com/iresty/lua-resty-ipmatcher).
 
-This project has been working in projects microservices API gateway [Apache APISIX](https://github.com/apache/incubator-apisix).
+This project has been working in microservices API gateway [Apache APISIX](https://github.com/apache/incubator-apisix).
 
 The project is open sourced by Shenzhen [ZhiLiu](https://www.iresty.com/) Technology Company. In addition to this open source version, our company also provides a more powerful and performing commercial version, and provides technical support. If you are interested in our commercial version, please contact us. email: [yuansheng@iresty.com](yuansheng@iresty.com) .
 
@@ -83,6 +83,7 @@ The attributes of each element may contain these:
 |methods    |option  |A list of method name. Here is full valid method list: "GET", "POST", "PUT", "DELETE", "PATCH", "HEAD", "OPTIONS", "CONNECT" and "TRACE".|{"GET", "POST"}|
 |vars       |option  |A list of `{var, operator, val}`. For example: {{var, operator, val}, {var, operator, val}, ...}, `{"arg_name", "==", "json"}` means the value of argument `name` expect to `json`. Here is the full [Operator List](#operator-list).|{{"arg_name", "==", "json"}, {"arg_age", ">", 18}}|
 |filter_fun |option  |User defined filter function, We can use it to achieve matching logic for special scenes. `radixtree` will pass `vars` and other arguments when matching route.|function(vars) return vars["arg_name"] == "json" end|
+|priority      |option  |Routing priority, default is 0.|priority = 100|
 |metadata   |option  |Will return this field if using `rx:match` to match route.||
 |handler    |option  |Will call this function using `rx:dispatch` to match route.||
 

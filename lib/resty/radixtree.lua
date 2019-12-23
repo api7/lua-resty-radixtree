@@ -153,7 +153,6 @@ local function insert_route(self, opts)
         end
 
         sort_tab(self.hash_path[path], sort_route)
-
         return true
     end
 
@@ -164,6 +163,7 @@ local function insert_route(self, opts)
         local routes = self.match_data[idx]
         if routes and routes[1].path == path then
             insert_tab(routes, opts)
+            sort_tab(routes, sort_route)
             return true
         end
     end

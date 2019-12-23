@@ -25,6 +25,7 @@ local cur_level   = ngx.config.subsystem == "http" and
                     require("ngx.errlog").get_sys_filter_level()
 local ngx_var     = ngx.var
 local re_find     = ngx.re.find
+local sort_tab    = table.sort
 local empty_table = {}
 
 
@@ -98,7 +99,7 @@ for i, name in ipairs({"GET", "POST", "PUT", "DELETE", "PATCH", "HEAD",
 end
 
 
-local _M = { _VERSION = 0.02 }
+local _M = { _VERSION = 1.7 }
 
 
 -- only work under lua51 or luajit
@@ -133,6 +134,11 @@ end
 local mt = { __index = _M, __gc = gc_free }
 
 
+local function sort_route(route_a, route_b)
+    return (route_a.priority or 0) > (route_b.priority or 0)
+end
+
+
 local function insert_route(self, opts)
     local path = opts.path
     opts = clone_tab(opts)
@@ -145,6 +151,8 @@ local function insert_route(self, opts)
         else
             insert_tab(self.hash_path[path], opts)
         end
+
+        sort_tab(self.hash_path[path], sort_route)
 
         return true
     end
@@ -286,6 +294,7 @@ function pre_insert_route(self, path, route)
     route_opts.method   = bit_methods
     route_opts.vars     = route.vars
     route_opts.filter_fun   = route.filter_fun
+    route_opts.priority = route.priority or 0
 
     local err
     local remote_addrs = route.remote_addrs

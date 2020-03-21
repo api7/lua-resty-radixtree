@@ -70,6 +70,12 @@ else
 endif
 
 
+### lint:         Lint Lua source code
+.PHONY: lint
+lint:
+	luacheck -q lib
+
+
 ### help:         Show Makefile rules
 .PHONY: help
 help:

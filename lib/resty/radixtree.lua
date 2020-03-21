@@ -157,7 +157,6 @@ local function insert_route(self, opts)
     end
 
     local data_idx = radix.radix_tree_find(self.tree, path, #path)
-    log_info("find: ", path, " matched: ", tostring(data_idx))
     if data_idx then
         local idx = tonumber(ffi_cast('intptr_t', data_idx))
         local routes = self.match_data[idx]
@@ -281,13 +280,16 @@ function pre_insert_route(self, path, route)
         route_opts.uris = {is_wildcard, uris}
     end
 
-    if path:sub(#path) == "*" then
-        path = path:sub(1, #path - 1)
+    route_opts.path_org = path
+    local star_pos = string.find(path, '*', 1, true)
+    if star_pos then
+        path = path:sub(1, star_pos - 1)
         route_opts.path_op = "<="
     else
         route_opts.path_op = "="
     end
     route_opts.path = path
+    log_info("path: ", path, " operator: ", route_opts.path_op)
 
     route_opts.metadata = route.metadata
     route_opts.handler  = route.handler
@@ -548,7 +550,9 @@ local function _match_from_routes(routes, path, opts, ...)
 
         else
             if match_route_opts(route, opts, ...) then
-                return route
+                -- log_info("matched route: ", require("cjson").encode(route))
+                -- log_info("matched path: ", path)
+                return route, path:sub(#route.path)
             end
         end
     end
@@ -568,7 +572,7 @@ local function match_route(self, path, opts, ...)
 
     local it = radix.radix_tree_search(self.tree, self.tree_it, path, #path)
     if not it then
-        return nil, "failed to match"
+        return nil, nil, "failed to match"
     end
 
     while true do
@@ -579,9 +583,18 @@ local function match_route(self, path, opts, ...)
 
         routes = self.match_data[idx]
         if routes then
-            local route = _match_from_routes(routes, path, opts, ...)
+            local route, ext = _match_from_routes(routes, path, opts, ...)
             if route then
-                return route
+                if opts.matched then
+                    log_info("route path: ", route.path_org)
+                    local name = string.sub(route.path_org, #route.path + 2)
+                    if name == "" then
+                        name = "ext"
+                    end
+                    opts.matched[name] = ext
+                end
+
+                return route, ext
             end
         end
     end
@@ -594,7 +607,9 @@ function _M.match(self, path, opts)
         error("invalid argument path", 2)
     end
 
-    local route, err = match_route(self, path, opts or empty_table)
+    opts = opts or empty_table
+
+    local route, err = match_route(self, path, opts)
     if not route then
         if err then
             return nil, err

@@ -3,6 +3,9 @@ INST_LIBDIR ?= $(INST_PREFIX)/lib/lua/5.1
 INST_LUADIR ?= $(INST_PREFIX)/share/lua/5.1
 INSTALL ?= install
 UNAME ?= $(shell uname)
+OR_EXEC ?= $(shell which openresty)
+LUAROCKS_VER ?= $(shell luarocks --version | grep -E -o  "luarocks [0-9]+.")
+LUAJIT_DIR ?= $(shell ${OR_EXEC} -V 2>&1 | grep prefix | grep -Eo 'prefix=(.*)/nginx\s+--' | grep -Eo '/.*/')luajit
 
 CFLAGS := -O2 -g -Wall -fpic -std=c99 -Wno-pointer-to-int-cast -Wno-int-to-pointer-cast
 
@@ -57,15 +60,13 @@ install:
 	$(INSTALL) $(C_SO_NAME) $(INST_LIBDIR)/
 
 
-### dev:          Create a development ENV
-.PHONY: dev
-dev:
-ifeq ($(UNAME),Darwin)
-	luarocks install --lua-dir=$(LUA_JIT_DIR) rockspec/lua-resty-radixtree-master-1.0-0.rockspec --only-deps
-else ifneq ($(LUAROCKS_VER),'luarocks 3.')
-	luarocks install rockspec/lua-resty-radixtree-master-1.0-0.rockspec --only-deps
+### deps:         Installation dependencies
+.PHONY: deps
+deps:
+ifneq ($(LUAROCKS_VER),luarocks 3.)
+	luarocks install rockspec/lua-resty-radixtree-master-1.0-0.rockspec --tree=deps --only-deps --local
 else
-	luarocks install --lua-dir=/usr/local/openresty/luajit rockspec/lua-resty-radixtree-master-1.0-0.rockspec --only-deps
+	luarocks install --lua-dir=$(LUAJIT_DIR) rockspec/lua-resty-radixtree-master-1.0-0.rockspec --tree=deps --only-deps --local
 endif
 
 

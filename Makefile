@@ -64,9 +64,9 @@ install:
 .PHONY: deps
 deps:
 ifneq ($(LUAROCKS_VER),luarocks 3.)
-	luarocks install rockspec/lua-resty-radixtree-master-1.0-0.rockspec --tree=deps --only-deps --local
+	luarocks install rockspec/lua-resty-radixtree-master-0-0.rockspec --tree=deps --only-deps --local
 else
-	luarocks install --lua-dir=$(LUAJIT_DIR) rockspec/lua-resty-radixtree-master-1.0-0.rockspec --tree=deps --only-deps --local
+	luarocks install --lua-dir=$(LUAJIT_DIR) rockspec/lua-resty-radixtree-master-0-0.rockspec --tree=deps --only-deps --local
 endif
 
 

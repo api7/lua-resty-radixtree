@@ -22,8 +22,8 @@ __DATA__
 
             local opts = {matched = {}}
             local meta, ext = rx:match("/name/json", opts)
-            ngx.say("match: ", meta)
-            ngx.say("ext: ", json.encode(opts.matched))
+            ngx.say("match meta: ", meta)
+            ngx.say("matched: ", json.encode(opts.matched))
         }
     }
 --- request
@@ -31,8 +31,8 @@ GET /t
 --- no_error_log
 [error]
 --- response_body
-match: metadata /name
-ext: {"name":"json"}
+match meta: metadata /name
+matched: {"name":"json"}
 
 
 
@@ -51,8 +51,8 @@ ext: {"name":"json"}
 
             local opts = {matched = {}}
             local meta, ext = rx:match("/name/json", opts)
-            ngx.say("match: ", meta)
-            ngx.say("ext: ", json.encode(opts.matched))
+            ngx.say("match meta: ", meta)
+            ngx.say("matched: ", json.encode(opts.matched))
         }
     }
 --- request
@@ -60,8 +60,8 @@ GET /t
 --- no_error_log
 [error]
 --- response_body
-match: metadata /name
-ext: {":ext":"json"}
+match meta: metadata /name
+matched: {":ext":"json"}
 
 
 
@@ -83,8 +83,8 @@ ext: {":ext":"json"}
 
             local opts = {matched = {}}
             local meta, ext = rx:match("/name/json", opts)
-            ngx.say("match: ", meta)
-            ngx.say("ext: ", json.encode(opts.matched))
+            ngx.say("match meta: ", meta)
+            ngx.say("matched: ", json.encode(opts.matched))
         }
     }
 --- request
@@ -92,8 +92,8 @@ GET /name/json
 --- no_error_log
 [error]
 --- response_body
-match: metadata /name
-ext: {":ext":"json","name":"json"}
+match meta: metadata /name
+matched: {":ext":"json","name":"json"}
 
 
 
@@ -112,8 +112,8 @@ ext: {":ext":"json","name":"json"}
 
             local opts = {matched = {}}
             local meta, ext = rx:match("/name/json/id/1", opts)
-            ngx.say("match: ", meta)
-            ngx.say("ext: ", json.encode(opts.matched))
+            ngx.say("match meta: ", meta)
+            ngx.say("matched: ", json.encode(opts.matched))
         }
     }
 --- request
@@ -121,8 +121,8 @@ GET /t
 --- no_error_log
 [error]
 --- response_body
-match: metadata /name
-ext: {"id":"1","name":"json"}
+match meta: metadata /name
+matched: {"id":"1","name":"json"}
 
 
 
@@ -141,8 +141,8 @@ ext: {"id":"1","name":"json"}
 
             local opts = {matched = {}}
             local meta, ext = rx:match("/name/json/id/1/foo/bar/gloo", opts)
-            ngx.say("match: ", meta)
-            ngx.say("ext: ", json.encode(opts.matched))
+            ngx.say("match meta: ", meta)
+            ngx.say("matched: ", json.encode(opts.matched))
         }
     }
 --- request
@@ -150,5 +150,34 @@ GET /t
 --- no_error_log
 [error]
 --- response_body
-match: metadata /name
-ext: {"other":"foo\/bar\/gloo","name":"json","id":"1"}
+match meta: metadata /name
+matched: {"other":"foo\/bar\/gloo","name":"json","id":"1"}
+
+
+
+=== TEST 6: /name/:name/id/:id (not match)
+--- config
+    location /t {
+        content_by_lua_block {
+            local json = require("cjson.safe")
+            local radix = require("resty.radixtree")
+            local rx = radix.new({
+                {
+                    paths = {"/name/:name/id/:id"},
+                    metadata = "metadata /name",
+                },
+            })
+
+            local opts = {matched = {}}
+            local meta, ext = rx:match("/name/json", opts)
+            ngx.say("match meta: ", meta)
+            ngx.say("matched: ", json.encode(opts.matched))
+        }
+    }
+--- request
+GET /t
+--- no_error_log
+[error]
+--- response_body
+match meta: nil
+matched: {}

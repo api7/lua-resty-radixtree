@@ -505,7 +505,6 @@ local compare_funcs = {
         end
         return false
     end,
-    ["~~~"] = compare_gin,
 }
 
 
@@ -627,8 +626,7 @@ local function _match_from_routes(routes, path, opts, ...)
         if match_route_opts(route, opts, ...) then
             -- log_info("matched route: ", require("cjson").encode(route))
             -- log_info("matched path: ", path)
-            local compare_fun = compare_funcs["~~~"]
-            if compare_fun(path, route.path_org, opts) then
+            if compare_gin(path, route.path_org, opts) then
                 return route
             end
         end

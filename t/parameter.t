@@ -50,7 +50,7 @@ matched: {"name":"json"}
             })
 
             local opts = {matched = {}}
-            local meta, ext = rx:match("/name/json", opts)
+            local meta, ext = rx:match("/name/json/foo/bar", opts)
             ngx.say("match meta: ", meta)
             ngx.say("matched: ", json.encode(opts.matched))
         }
@@ -61,43 +61,11 @@ GET /t
 [error]
 --- response_body
 match meta: metadata /name
-matched: {":ext":"json"}
+matched: {":ext":"json\/foo\/bar"}
 
 
 
-=== TEST 3: /name/:name in vars
---- config
-    location /name {
-        content_by_lua_block {
-            local json = require("cjson.safe")
-            local radix = require("resty.radixtree")
-            local rx = radix.new({
-                {
-                    paths = {"/name/*"},
-                    metadata = "metadata /name",
-                    vars = {
-                        {"request_uri", "~~~", "/name/:name"},
-                    }
-                }
-            })
-
-            local opts = {matched = {}}
-            local meta, ext = rx:match("/name/json", opts)
-            ngx.say("match meta: ", meta)
-            ngx.say("matched: ", json.encode(opts.matched))
-        }
-    }
---- request
-GET /name/json
---- no_error_log
-[error]
---- response_body
-match meta: metadata /name
-matched: {":ext":"json","name":"json"}
-
-
-
-=== TEST 4: /name/:name/id/:id
+=== TEST 3: /name/:name/id/:id
 --- config
     location /t {
         content_by_lua_block {
@@ -126,7 +94,7 @@ matched: {"id":"1","name":"json"}
 
 
 
-=== TEST 5: /name/:name/id/:id/*other
+=== TEST 4: /name/:name/id/:id/*other
 --- config
     location /t {
         content_by_lua_block {
@@ -155,7 +123,7 @@ matched: {"other":"foo\/bar\/gloo","name":"json","id":"1"}
 
 
 
-=== TEST 6: /name/:name/id/:id (not match)
+=== TEST 5: /name/:name/id/:id (not match)
 --- config
     location /t {
         content_by_lua_block {

@@ -457,6 +457,25 @@ local function fetch_pat(path)
     return pat, names
 end
 
+local function compare_gin(l_v, r_v, opts)
+    local pat, names = fetch_pat(r_v)
+    -- log_info("pat: ", require("cjson").encode(pat))
+    local m = re_match(l_v, pat, "jo")
+    if not m then
+        return false
+    end
+
+    if opts.matched then
+        for i, v in ipairs(m) do
+            local name = names[i]
+            if name and v then
+                opts.matched[name] = v
+            end
+        end
+    end
+    return true
+end
+
 local compare_funcs = {
     ["=="] = function (l_v, r_v)
         if type(r_v) == "number" then
@@ -486,27 +505,8 @@ local compare_funcs = {
         end
         return false
     end,
+    ["~~~"] = compare_gin,
 }
-
-local function compare_gin(l_v, r_v, opts)
-    local pat, names = fetch_pat(r_v)
-    -- log_info("pat: ", require("cjson").encode(pat))
-    local m = re_match(l_v, pat, "jo")
-    if not m then
-        return false
-    end
-
-    if opts.matched then
-        for i, v in ipairs(m) do
-            local name = names[i]
-            if name and v then
-                opts.matched[name] = v
-            end
-        end
-    end
-    return true
-end
-compare_funcs["~~~"] = compare_gin
 
 
 local function compare_val(l_v, op, r_v, opts)

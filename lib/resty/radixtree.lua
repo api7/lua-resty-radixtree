@@ -4,7 +4,10 @@ local ipmatcher   = require("resty.ipmatcher")
 local base        = require("resty.core.base")
 local clear_tab   = require("table.clear")
 local clone_tab   = require("table.clone")
+local lrucache    = require("resty.lrucache")
 local bit         = require("bit")
+local ngx         = ngx
+local table       = table
 local new_tab     = base.new_tab
 local tonumber    = tonumber
 local ipairs      = ipairs
@@ -20,12 +23,13 @@ local setmetatable=setmetatable
 local type        = type
 local error       = error
 local newproxy    = newproxy
-local tostring    = tostring
 local cur_level   = ngx.config.subsystem == "http" and
                     require("ngx.errlog").get_sys_filter_level()
 local ngx_var     = ngx.var
 local re_find     = ngx.re.find
+local re_match    = ngx.re.match
 local sort_tab    = table.sort
+local ngx_re      = require("ngx.re")
 local empty_table = {}
 
 
@@ -157,7 +161,6 @@ local function insert_route(self, opts)
     end
 
     local data_idx = radix.radix_tree_find(self.tree, path, #path)
-    log_info("find: ", path, " matched: ", tostring(data_idx))
     if data_idx then
         local idx = tonumber(ffi_cast('intptr_t', data_idx))
         local routes = self.match_data[idx]
@@ -281,13 +284,26 @@ function pre_insert_route(self, path, route)
         route_opts.uris = {is_wildcard, uris}
     end
 
-    if path:sub(#path) == "*" then
-        path = path:sub(1, #path - 1)
+    route_opts.path_org = path
+
+    local pos = string.find(path, ':', 1, true)
+    if pos then
+        path = path:sub(1, pos - 1)
         route_opts.path_op = "<="
+        route_opts.path = path
+
     else
-        route_opts.path_op = "="
+        pos = string.find(path, '*', 1, true)
+        if pos then
+            path = path:sub(1, pos - 1)
+            route_opts.path_op = "<="
+        else
+            route_opts.path_op = "="
+        end
+        route_opts.path = path
     end
-    route_opts.path = path
+
+    log_info("path: ", route_opts.path, " operator: ", route_opts.path_op)
 
     route_opts.metadata = route.metadata
     route_opts.handler  = route.handler
@@ -401,6 +417,68 @@ local function match_uri(route_uri_is_wildcard, route_uri, request_uri)
 end
 
 
+local tmp = {}
+local lru_pat, err = lrucache.new(1000)
+if not lru_pat then
+    error("failed to generate new lru object: " .. err)
+end
+
+local function fetch_pat(path)
+    local pat = lru_pat:get(path)
+    if pat then
+        return pat[1], pat[2]   -- pat, names
+    end
+
+    clear_tab(tmp)
+    local res = ngx_re.split(path, "/", tmp)
+    if not res then
+        return false
+    end
+
+    local names = {}
+    for i, item in ipairs(res) do
+        local first_byte = item:byte(1, 1)
+        if first_byte == string.byte(":") then
+            table.insert(names, res[i]:sub(2))
+            res[i] = [=[([\w\-_\%]+)]=]
+
+        elseif first_byte == string.byte("*") then
+            local name = res[i]:sub(2)
+            if name == "" then
+                name = ":ext"
+            end
+            table.insert(names, name)
+            res[i] = [=[(.*)]=]
+        end
+    end
+
+    local pat = table.concat(res, [[\/]])
+    lru_pat:set(path, {pat, names}, 60 * 60)
+    return pat, names
+end
+
+local function compare_gin(l_v, r_v, opts)
+    if not opts.matched then
+        return true
+    end
+
+    local pat, names = fetch_pat(r_v)
+    -- log_info("pat: ", require("cjson").encode(pat))
+    local m = re_match(l_v, pat, "jo")
+    if not m then
+        return false
+    end
+
+
+    for i, v in ipairs(m) do
+        local name = names[i]
+        if name and v then
+            opts.matched[name] = v
+        end
+    end
+    return true
+end
+
 local compare_funcs = {
     ["=="] = function (l_v, r_v)
         if type(r_v) == "number" then
@@ -433,12 +511,12 @@ local compare_funcs = {
 }
 
 
-local function compare_val(l_v, op, r_v)
+local function compare_val(l_v, op, r_v, opts)
     local com_fun = compare_funcs[op or "=="]
     if not com_fun then
         return false
     end
-    return com_fun(l_v, r_v)
+    return com_fun(l_v, r_v, opts)
 end
 
 
@@ -521,7 +599,7 @@ local function match_route_opts(route, opts, ...)
             l_v = vars[l_v]
 
             -- ngx.log(ngx.INFO, l_v, op, r_v)
-            if not compare_val(l_v, op, r_v) then
+            if not compare_val(l_v, op, r_v, opts) then
                 return false
             end
         end
@@ -545,18 +623,29 @@ local function _match_from_routes(routes, path, opts, ...)
                     return route
                 end
             end
+            goto continue
+        end
 
-        else
-            if match_route_opts(route, opts, ...) then
+        if match_route_opts(route, opts, ...) then
+            -- log_info("matched route: ", require("cjson").encode(route))
+            -- log_info("matched path: ", path)
+            if compare_gin(path, route.path_org, opts) then
                 return route
             end
         end
+
+        ::continue::
     end
+
     return nil
 end
 
 
 local function match_route(self, path, opts, ...)
+    if opts.matched then
+        clear_tab(opts.matched)
+    end
+
     local routes = self.hash_path[path]
     if routes then
         for _, route in ipairs(routes) do

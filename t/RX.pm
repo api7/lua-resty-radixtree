@@ -17,7 +17,7 @@ add_block_preprocessor(sub {
 
     my $http_config = $block->http_config // '';
     $http_config = <<_EOC_;
-    lua_package_path '$pwd/t/lib/?.lua;$pwd/lib/?.lua;\$prefix/?.lua;;';
+    lua_package_path '$pwd/t/lib/?.lua;$pwd/lib/?.lua;$pwd/deps/share/lua/5.1/?.lua;\$prefix/?.lua;;';
     lua_package_cpath '$pwd/?.so;;';
 
     $http_config

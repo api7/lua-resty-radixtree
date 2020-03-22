@@ -1,5 +1,18 @@
-Name
-====
+# Table of Contents
+
+* [Name](#name)
+* [Status](#status)
+* [Synopsis](#synopsis)
+* [Methods](#methods)
+  * [new](#new)
+  * [match](#match)
+  * [dispatch](#dispatch)
+* [Install](#install)
+* [DEV ENV](#dev-env)
+* [Benchmark](#benchmark)
+
+## Name
+
 This is Lua-Openresty implementation library base on FFI for [rax](https://github.com/antirez/rax).
 
 [![Build Status](https://travis-ci.org/iresty/lua-resty-radixtree.svg?branch=master)](https://travis-ci.org/iresty/lua-resty-radixtree)
@@ -11,22 +24,7 @@ This project has been working in microservices API gateway [Apache APISIX](https
 
 The project is open sourced by Shenzhen [ZhiLiu](https://www.iresty.com/) Technology Company. In addition to this open source version, our company also provides a more powerful and performing commercial version, and provides technical support. If you are interested in our commercial version, please contact us. email: [yuansheng@iresty.com](yuansheng@iresty.com) .
 
-Table of Contents
-=================
-
-* [Name](#name)
-* [Status](#status)
-* [Synopsis](#synopsis)
-* [Methods](#methods)
-    * [new](#new)
-    * [match](#match)
-    * [dispatch](#dispatch)
-* [Install](#install)
-* [DEV ENV](#dev-env)
-* [Benchmark](#benchmark)
-
-Synopsis
-========
+## Synopsis
 
 ```lua
  location / {
@@ -34,7 +32,7 @@ Synopsis
         local radix = require("resty.radixtree")
         local rx = radix.new({
             {
-                paths = {"/bb*", "/aa"},
+                paths = {"/aa", "/bb*", "/name/:name/*other"},
                 hosts = {"*.bar.com", "foo.com"},
                 methods = {"GET", "POST", "PUT"},
                 remote_addrs = {"127.0.0.1","192.168.0.0/16",
@@ -52,21 +50,33 @@ Synopsis
         })
 
         -- try to match
-        ngx.say(rx:match("/aa", {host = "foo.com",
-                                 method = "GET",
-                                 remote_addr = "127.0.0.1",
-                                 vars = ngx.var}))
+        local opts = {
+            host = "foo.com",
+            method = "GET",
+            remote_addr = "127.0.0.1",
+            vars = ngx.var,
+        }
+        ngx.say(rx:match("/aa", opts))
+
+        -- try to match and store the cached value
+        local opts = {
+            host = "foo.com",
+            method = "GET",
+            remote_addr = "127.0.0.1",
+            vars = ngx.var,
+            matched = {}
+        }
+        ngx.say(rx:match("/name/json/foo/bar/gloo", opts))
+        ngx.say("name: ", opts.matched.name, " other:", opts.matched.other)
      }
  }
 ```
 
 [Back to TOC](#table-of-contents)
 
-Methods
-=======
+## Methods
 
-new
----
+### new
 
 `syntax: rx, err = radix.new(routes)`
 
@@ -87,6 +97,63 @@ The attributes of each element may contain these:
 |metadata   |option  |Will return this field if using `rx:match` to match route.||
 |handler    |option  |Will call this function using `rx:dispatch` to match route.||
 
+### Path
+
+#### Full path match
+
+```lua
+local rx = radix.new({
+    {
+        paths = {"/aa", "/bb/cc", "/dd/ee/index.html"},
+        metadata = "metadata /aa",
+    },
+    {
+        paths = {"/gg"},
+        metadata = "metadata /gg",
+    },
+    {
+        paths = {"/index.html"},
+        metadata = "metadata /index.html",
+    },
+})
+```
+
+Full path matching, allowing multiple paths to be specified at the same time.
+
+#### Prefix match
+
+```lua
+local rx = radix.new({
+    {
+        paths = {"/aa/*", "/bb/cc/*"},
+        metadata = "metadata /aa",
+    },
+    {
+        paths = {"/gg/*"},
+        metadata = "metadata /gg",
+    },
+})
+```
+
+Path prefix matching, allowing multiple paths to be specified at the same time.
+
+#### Parameters in path
+
+```lua
+local rx = radix.new({
+    {
+        -- This handler will match /user/john but will not match /user/ or /user
+        paths = {"/user/:user"},
+        metadata = "metadata /user",
+    },
+    {
+        -- However, this one will match /user/john/ and also /user/john/send/data
+        paths = {"/user/:user/*action"},
+        metadata = "metadata action",
+    },
+})
+```
+
 #### Operator List
 
 |operator|description|example|
@@ -99,18 +166,17 @@ The attributes of each element may contain these:
 
 [Back to TOC](#table-of-contents)
 
-match
------
+### match
 
 `syntax: metadata = rx:match(path, opts)`
 
 * `path`: client request path.
 * `opts`: a Lua tale (optional).
-    * `method`: optional, method name of client request.
-    * `host`: optional, client request host.
-    * `remote_addr`: optional, client remote address like `192.168.1.100`.
-    * `uri`: optional, client request uri.
-    * `vars`: optional, a Lua table to fetch variable, default value is `ngx.var` to fetch Ningx builtin variable.
+  * `method`: optional, method name of client request.
+  * `host`: optional, client request host.
+  * `remote_addr`: optional, client remote address like `192.168.1.100`.
+  * `uri`: optional, client request uri.
+  * `vars`: optional, a Lua table to fetch variable, default value is `ngx.var` to fetch Ningx builtin variable.
 
 Matchs the route by `method`, `path` and `host` etc, and return `metadata` if successful.
 
@@ -120,18 +186,17 @@ local metadata = rx:match(ngx.var.uri, {...})
 
 [Back to TOC](#table-of-contents)
 
-dispatch
---------
+### dispatch
 
 `syntax: ok = rx:dispatch(path, opts, ...)`
 
 * `path`: client request path.
 * `opts`: a Lua tale (optional).
-    * `method`: optional, method name of client request.
-    * `host`: optional, client request host.
-    * `remote_addr`: optional, client remote address like `192.168.1.100`.
-    * `uri`: optional, client request uri.
-    * `vars`: optional, a Lua table to fetch variable, default value is `ngx.var` to fetch Ningx builtin variable.
+  * `method`: optional, method name of client request.
+  * `host`: optional, client request host.
+  * `remote_addr`: optional, client remote address like `192.168.1.100`.
+  * `uri`: optional, client request uri.
+  * `vars`: optional, a Lua table to fetch variable, default value is `ngx.var` to fetch Ningx builtin variable.
 
 Matchs the route by `method`, `path` and `host` etc, and call `handler` function if successful.
 
@@ -141,33 +206,28 @@ local ok = rx:dispatch(ngx.var.uri, {...})
 
 [Back to TOC](#table-of-contents)
 
-Install
-=======
+## Install
 
 ### Compile and install
 
-```
+```shell
 make install
 ```
 
 [Back to TOC](#table-of-contents)
 
-
-DEV ENV
-=======
-
+## DEV ENV
 
 ### Install Dependencies
 
-```
+```shell
 make dev
 ```
 
-Benchmark
-=========
+## Benchmark
 
 We wrote some simple benchmark scripts.
-Machine environment: Macbook pro 2015 15-inch i7 2.8G CPU.
+Machine environment: 9600kf 3.7G CPU.
 
 ```shell
 $ make
@@ -175,33 +235,28 @@ cc -O2 -g -Wall -fpic -std=c99 -Wno-pointer-to-int-cast -Wno-int-to-pointer-cast
 cc -O2 -g -Wall -fpic -std=c99 -Wno-pointer-to-int-cast -Wno-int-to-pointer-cast -DBUILDING_SO -c src/easy_rax.c -o src/easy_rax.o
 cc -shared -fvisibility=hidden src/rax.o src/easy_rax.o -o librestyradixtree.so
 
-$ resty -I./lib benchmark/match-static.lua
-matched res: 500
+$ make bench
+resty -I=./lib -I=./deps/share/lua/5.1 benchmark/match-parameter.lua
+matched res: 1
 route count: 100000
 match times: 1000000
-time used  : 0.089999914169312 sec
-QPS        : 11111121
+time used  : 0.51699995994568 sec
+QPS        : 1934236
+each time  : 0.51699995994568 ns
 
-$ resty -I./lib benchmark/match-static.lua
+resty -I=./lib -I=./deps/share/lua/5.1 benchmark/match-prefix.lua
 matched res: 500
 route count: 100000
 match times: 1000000
-time used  : 0.094000101089478 sec
-QPS        : 10638286
+time used  : 0.625 sec
+QPS        : 1600000
 
-$ resty -I./lib benchmark/match-prefix.lua
+resty -I=./lib -I=./deps/share/lua/5.1 benchmark/match-static.lua
 matched res: 500
 route count: 100000
 match times: 1000000
-time used  : 0.85500001907349 sec
-QPS        : 1169590
-
-$ resty -I./lib benchmark/match-prefix.lua
-matched res: 500
-route count: 100000
-match times: 1000000
-time used  : 0.83500003814697 sec
-QPS        : 1197604
+time used  : 0.10099983215332 sec
+QPS        : 9901006
 ```
 
 [Back to TOC](#table-of-contents)

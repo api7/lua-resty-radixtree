@@ -80,8 +80,11 @@ lint:
 .PHONY: bench
 bench:
 	resty -I=./lib -I=./deps/share/lua/5.1 benchmark/match-parameter.lua
+	@echo ""
 	resty -I=./lib -I=./deps/share/lua/5.1 benchmark/match-prefix.lua
+	@echo ""
 	resty -I=./lib -I=./deps/share/lua/5.1 benchmark/match-static.lua
+	@echo ""
 
 
 ### help:         Show Makefile rules

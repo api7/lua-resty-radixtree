@@ -235,33 +235,28 @@ cc -O2 -g -Wall -fpic -std=c99 -Wno-pointer-to-int-cast -Wno-int-to-pointer-cast
 cc -O2 -g -Wall -fpic -std=c99 -Wno-pointer-to-int-cast -Wno-int-to-pointer-cast -DBUILDING_SO -c src/easy_rax.c -o src/easy_rax.o
 cc -shared -fvisibility=hidden src/rax.o src/easy_rax.o -o librestyradixtree.so
 
-$ resty -I./lib benchmark/match-static.lua
-matched res: 500
+$ make bench
+resty -I=./lib -I=./deps/share/lua/5.1 benchmark/match-parameter.lua
+matched res: 1
 route count: 100000
 match times: 1000000
-time used  : 0.089999914169312 sec
-QPS        : 11111121
+time used  : 0.51699995994568 sec
+QPS        : 1934236
+each time  : 0.51699995994568 ns
 
-$ resty -I./lib benchmark/match-static.lua
+resty -I=./lib -I=./deps/share/lua/5.1 benchmark/match-prefix.lua
 matched res: 500
 route count: 100000
 match times: 1000000
-time used  : 0.094000101089478 sec
-QPS        : 10638286
+time used  : 0.625 sec
+QPS        : 1600000
 
-$ resty -I./lib benchmark/match-prefix.lua
+resty -I=./lib -I=./deps/share/lua/5.1 benchmark/match-static.lua
 matched res: 500
 route count: 100000
 match times: 1000000
-time used  : 0.85500001907349 sec
-QPS        : 1169590
-
-$ resty -I./lib benchmark/match-prefix.lua
-matched res: 500
-route count: 100000
-match times: 1000000
-time used  : 0.83500003814697 sec
-QPS        : 1197604
+time used  : 0.10099983215332 sec
+QPS        : 9901006
 ```
 
 [Back to TOC](#table-of-contents)

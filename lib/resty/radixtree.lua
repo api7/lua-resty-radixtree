@@ -680,9 +680,7 @@ function _M.match(self, path, opts)
         error("invalid argument path", 2)
     end
 
-    opts = opts or empty_table
-
-    local route, err = match_route(self, path, opts)
+    local route, err = match_route(self, path, opts or empty_table)
     if not route then
         if err then
             return nil, err

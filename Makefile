@@ -76,6 +76,14 @@ lint:
 	luacheck -q lib
 
 
+### bench:        Run benchmark
+.PHONY: bench
+bench:
+	resty -I=./lib -I=./deps/share/lua/5.1 benchmark/match-parameter.lua
+	resty -I=./lib -I=./deps/share/lua/5.1 benchmark/match-prefix.lua
+	resty -I=./lib -I=./deps/share/lua/5.1 benchmark/match-static.lua
+
+
 ### help:         Show Makefile rules
 .PHONY: help
 help:

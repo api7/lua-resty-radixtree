@@ -227,7 +227,7 @@ make dev
 ## Benchmark
 
 We wrote some simple benchmark scripts.
-Machine environment: Macbook pro 2015 15-inch i7 2.8G CPU.
+Machine environment: 9600kf 3.7G CPU.
 
 ```shell
 $ make

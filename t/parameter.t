@@ -21,7 +21,11 @@ __DATA__
             })
 
             local opts = {matched = {}}
-            local meta, ext = rx:match("/name/json", opts)
+            local meta = rx:match("/name/json", opts)
+            ngx.say("match meta: ", meta)
+            ngx.say("matched: ", json.encode(opts.matched))
+
+            meta = rx:match("/name/", opts)
             ngx.say("match meta: ", meta)
             ngx.say("matched: ", json.encode(opts.matched))
         }
@@ -33,6 +37,8 @@ GET /t
 --- response_body
 match meta: metadata /name
 matched: {"name":"json"}
+match meta: metadata /name
+matched: {"name":""}
 
 
 
@@ -50,7 +56,11 @@ matched: {"name":"json"}
             })
 
             local opts = {matched = {}}
-            local meta, ext = rx:match("/name/json/foo/bar", opts)
+            local meta = rx:match("/name/json/foo/bar", opts)
+            ngx.say("match meta: ", meta)
+            ngx.say("matched: ", json.encode(opts.matched))
+
+            meta = rx:match("/name/", opts)
             ngx.say("match meta: ", meta)
             ngx.say("matched: ", json.encode(opts.matched))
         }
@@ -62,6 +72,8 @@ GET /t
 --- response_body
 match meta: metadata /name
 matched: {":ext":"json\/foo\/bar"}
+match meta: metadata /name
+matched: {":ext":""}
 
 
 
@@ -79,7 +91,12 @@ matched: {":ext":"json\/foo\/bar"}
             })
 
             local opts = {matched = {}}
-            local meta, ext = rx:match("/name/json/id/1", opts)
+            local meta = rx:match("/name/json/id/1", opts)
+            ngx.say("match meta: ", meta)
+            ngx.say("matched: ", json.encode(opts.matched))
+
+            opts.matched = {}
+            meta = rx:match("/name/json/id/", opts)
             ngx.say("match meta: ", meta)
             ngx.say("matched: ", json.encode(opts.matched))
         }
@@ -91,6 +108,8 @@ GET /t
 --- response_body
 match meta: metadata /name
 matched: {"id":"1","name":"json"}
+match meta: nil
+matched: {}
 
 
 
@@ -108,7 +127,7 @@ matched: {"id":"1","name":"json"}
             })
 
             local opts = {matched = {}}
-            local meta, ext = rx:match("/name/json/id/1/foo/bar/gloo", opts)
+            local meta = rx:match("/name/json/id/1/foo/bar/gloo", opts)
             ngx.say("match meta: ", meta)
             ngx.say("matched: ", json.encode(opts.matched))
         }
@@ -137,7 +156,7 @@ matched: {"other":"foo\/bar\/gloo","name":"json","id":"1"}
             })
 
             local opts = {matched = {}}
-            local meta, ext = rx:match("/name/json", opts)
+            local meta = rx:match("/name/json", opts)
             ngx.say("match meta: ", meta)
             ngx.say("matched: ", json.encode(opts.matched))
         }

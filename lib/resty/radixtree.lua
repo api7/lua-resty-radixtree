@@ -448,7 +448,7 @@ local function fetch_pat(path)
                 name = ":ext"
             end
             table.insert(names, name)
-            res[i] = [=[(.*+)]=]
+            res[i] = [=[(.*)]=]
         end
     end
 
@@ -639,6 +639,10 @@ end
 
 
 local function match_route(self, path, opts, ...)
+    if opts.matched then
+        clear_tab(opts.matched)
+    end
+
     local routes = self.hash_path[path]
     if routes then
         for _, route in ipairs(routes) do

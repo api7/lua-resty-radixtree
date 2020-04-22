@@ -599,6 +599,9 @@ local function match_route_opts(route, opts, ...)
             l_v = vars[l_v]
 
             -- ngx.log(ngx.INFO, l_v, op, r_v)
+            if l_v == nil or r_v == nil then
+                return false
+            end
             if not compare_val(l_v, op, r_v, opts) then
                 return false
             end

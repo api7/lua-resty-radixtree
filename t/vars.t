@@ -445,3 +445,30 @@ nil
 nil
 nil
 nil
+
+
+
+=== TEST 16: have no uri args
+--- config
+    location /t {
+        content_by_lua_block {
+            local radix = require("resty.radixtree")
+            local rx = radix.new({
+                {
+                    paths = "/aa",
+                    metadata = "metadata /aa",
+                    vars = {
+                        {"arg_k", ">", 10},
+                    },
+                }
+            })
+
+            ngx.say(rx:match("/aa", {vars = {}}))
+        }
+    }
+--- request
+GET /t
+--- no_error_log
+[error]
+--- response_body
+nil

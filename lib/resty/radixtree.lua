@@ -529,6 +529,10 @@ local function match_route_opts(route, opts, ...)
         end
     end
 
+    if opts.matched ~= nil then
+        opts.matched._method = method
+    end
+
     local matcher_ins = route.matcher_ins
     if matcher_ins then
         local ok, err = matcher_ins:match(opts.remote_addr)
@@ -554,6 +558,9 @@ local function match_route_opts(route, opts, ...)
         if reverse_host then
             for i = 1, #hosts, 2 do
                 if match_host(hosts[i], hosts[i + 1], reverse_host) then
+                    if opts.matched ~= nil then
+                        opts.matched._host = hosts[i + 1]:reverse()
+                    end
                     matched = true
                     break
                 end
@@ -571,6 +578,9 @@ local function match_route_opts(route, opts, ...)
         local uris = route.uris
         for i = 1, #uris, 2 do
             if match_uri(uris[i], uris[i + 1], opts.uri) then
+                if opts.matched ~= nil then
+                    opts.matched._uri = uris[i + 1]
+                end
                 matched = true
                 break
             end

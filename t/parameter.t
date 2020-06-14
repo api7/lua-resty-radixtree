@@ -168,3 +168,36 @@ GET /t
 --- response_body
 match meta: nil
 matched: {}
+
+
+
+=== TEST 6: /name/:name/id/:id
+--- config
+    location /t {
+        content_by_lua_block {
+            local json = require("cjson.safe")
+            local radix = require("resty.radixtree")
+            local rx = radix.new({
+                {
+                    paths = {"/aa/*", "/bb/cc/*", "/dd/ee/index.html"},
+                    uris = {"/aa/*", "/bb/cc/*", "/dd/ee/index.html"},
+                    methods = {"GET", "POST", "PUT"},
+                    hosts = {"foo.com", "*.bar.com"},
+                    metadata = "metadata /asf",
+                },
+            })
+
+            local opts = {matched = {}, method = "GET", uri = "/bb/cc/xx", host = "foo.com"}
+            local meta = rx:match("/bb/cc/xx", opts)
+            ngx.say("match meta: ", meta)
+            ngx.say("matched: ", json.encode(opts.matched))            
+
+        }
+    }
+--- request
+GET /t
+--- no_error_log
+[error]
+--- response_body
+match meta: metadata /asf
+matched: {"_uri":"\/bb\/cc\/",":ext":"xx","_method":"GET","_host":"foo.com"}

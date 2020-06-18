@@ -17,7 +17,7 @@ __DATA__
                     paths = "/aa",
                     metadata = "metadata /aa",
                     vars = {
-                        {"arg_k", "v"},
+                        {"arg_k", "==", "v"},
                     },
                 }
             })
@@ -71,7 +71,7 @@ nil
                     paths = "/aa",
                     metadata = "metadata /aa",
                     vars = {
-                        {"http_test", "v"},
+                        {"http_test", "==", "v"},
                     }
                 }
             })
@@ -129,9 +129,9 @@ nil
                     paths = "/aa",
                     metadata = "metadata /aa",
                     vars = {
-                        {"arg_k", "v"},
-                        {"host", "localhost"},
-                        {"server_port", "1984"},
+                        {"arg_k", "==", "v"},
+                        {"host", "==", "localhost"},
+                        {"server_port", "==", "1984"},
                     }
                 }
             })
@@ -187,9 +187,9 @@ nil
                     paths = "/aa",
                     metadata = "metadata /aa",
                     vars = {
-                        {"arg_k", "v"},
-                        {"host", "localhost"},
-                        {"server_port", "1984"},
+                        {"arg_k", "==", "v"},
+                        {"host", "==", "localhost"},
+                        {"server_port", "==", "1984"},
                     }
                 }
             })
@@ -351,7 +351,7 @@ nil
                     paths = "/aa",
                     metadata = "metadata /aa",
                     vars = {
-                        {"arg_k", "v"},
+                        {"arg_k", "==", "v"},
                     },
                 },
                 {
@@ -472,3 +472,29 @@ GET /t
 [error]
 --- response_body
 nil
+
+
+
+=== TEST 17: ~= nil
+--- config
+    location /t {
+        content_by_lua_block {
+            local radix = require("resty.radixtree")
+            local rx = radix.new({
+                {
+                    paths = "/aa",
+                    metadata = "metadata /aa",
+                    vars = {
+                        {"arg_k", "~=", nil},
+                    },
+                }
+            })
+            ngx.say(rx:match("/aa", {vars = ngx.var}))
+        }
+    }
+--- request
+GET /t?k=v
+--- no_error_log
+[error]
+--- response_body
+metadata /aa

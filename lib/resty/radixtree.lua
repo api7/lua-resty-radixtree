@@ -30,6 +30,7 @@ local re_find     = ngx.re.find
 local re_match    = ngx.re.match
 local sort_tab    = table.sort
 local ngx_re      = require("ngx.re")
+local ngx_null    = ngx.null
 local empty_table = {}
 
 
@@ -482,7 +483,10 @@ end
 local compare_funcs = {
     ["=="] = function (l_v, r_v)
         if type(r_v) == "number" then
-            return tonumber(l_v) == r_v
+            l_v = tonumber(l_v)
+            if not l_v then
+                return false
+            end
         end
         return l_v == r_v
     end,
@@ -490,14 +494,18 @@ local compare_funcs = {
         return l_v ~= r_v
     end,
     [">"] = function (l_v, r_v)
-        if type(r_v) == "number" then
-            return tonumber(l_v) > r_v
+        l_v = tonumber(l_v)
+        r_v = tonumber(r_v)
+        if not l_v or not r_v then
+            return false
         end
         return l_v > r_v
     end,
     ["<"] = function (l_v, r_v)
-        if type(r_v) == "number" then
-            return tonumber(l_v) < r_v
+        l_v = tonumber(l_v)
+        r_v = tonumber(r_v)
+        if not l_v or not r_v then
+            return false
         end
         return l_v < r_v
     end,
@@ -512,6 +520,10 @@ local compare_funcs = {
 
 
 local function compare_val(l_v, op, r_v, opts)
+    if r_v == ngx_null then
+        r_v = nil
+    end
+
     local com_fun = compare_funcs[op or "=="]
     if not com_fun then
         return false
@@ -596,19 +608,9 @@ local function match_route_opts(route, opts, ...)
         end
 
         for _, route_var in ipairs(route.vars) do
-            local l_v, op, r_v
-            if #route_var == 2 then
-                l_v, r_v = route_var[1], route_var[2]
-                op = "=="
-            else
-                l_v, op, r_v = route_var[1], route_var[2], route_var[3]
-            end
+            local l_v, op, r_v = route_var[1], route_var[2], route_var[3]
             l_v = vars[l_v]
 
-            -- ngx.log(ngx.INFO, l_v, op, r_v)
-            if l_v == nil or r_v == nil then
-                return false
-            end
             if not compare_val(l_v, op, r_v, opts) then
                 return false
             end

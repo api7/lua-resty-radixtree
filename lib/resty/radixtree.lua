@@ -541,6 +541,10 @@ local function match_route_opts(route, opts, ...)
         end
     end
 
+    if opts.matched ~= nil then
+        opts.matched._method = method
+    end
+
     local matcher_ins = route.matcher_ins
     if matcher_ins then
         local ok, err = matcher_ins:match(opts.remote_addr)
@@ -566,6 +570,9 @@ local function match_route_opts(route, opts, ...)
         if reverse_host then
             for i = 1, #hosts, 2 do
                 if match_host(hosts[i], hosts[i + 1], reverse_host) then
+                    if opts.matched ~= nil then
+                        opts.matched._host = hosts[i + 1]:reverse()
+                    end
                     matched = true
                     break
                 end
@@ -621,10 +628,14 @@ end
 
 
 local function _match_from_routes(routes, path, opts, ...)
+    local opts_matched_exists = (opts.matched ~= nil)
     for _, route in ipairs(routes) do
         if route.path_op == "=" then
             if route.path == path then
                 if match_route_opts(route, opts, ...) then
+                    if opts_matched_exists then
+                        opts.matched._path = path
+                    end
                     return route
                 end
             end
@@ -635,6 +646,9 @@ local function _match_from_routes(routes, path, opts, ...)
             -- log_info("matched route: ", require("cjson").encode(route))
             -- log_info("matched path: ", path)
             if compare_gin(path, route.path_org, opts) then
+                    if opts_matched_exists then
+                        opts.matched._path = route.path_org
+                    end
                 return route
             end
         end
@@ -652,9 +666,13 @@ local function match_route(self, path, opts, ...)
     end
 
     local routes = self.hash_path[path]
+    local opts_matched_exists = (opts.matched ~= nil)
     if routes then
         for _, route in ipairs(routes) do
             if match_route_opts(route, opts, ...) then
+                if opts_matched_exists then
+                    opts.matched._path = path
+                end
                 return route
             end
         end

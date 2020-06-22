@@ -36,9 +36,9 @@ GET /t
 [error]
 --- response_body
 match meta: metadata /name
-matched: {"name":"json"}
+matched: {"_path":"\/name\/*name","name":"json"}
 match meta: metadata /name
-matched: {"name":""}
+matched: {"_path":"\/name\/*name","name":""}
 
 
 
@@ -71,9 +71,9 @@ GET /t
 [error]
 --- response_body
 match meta: metadata /name
-matched: {":ext":"json\/foo\/bar"}
+matched: {"_path":"\/name\/*",":ext":"json\/foo\/bar"}
 match meta: metadata /name
-matched: {":ext":""}
+matched: {"_path":"\/name\/*",":ext":""}
 
 
 
@@ -107,7 +107,7 @@ GET /t
 [error]
 --- response_body
 match meta: metadata /name
-matched: {"id":"1","name":"json"}
+matched: {"name":"json","_path":"\/name\/:name\/id\/:id","id":"1"}
 match meta: nil
 matched: {}
 
@@ -138,7 +138,7 @@ GET /t
 [error]
 --- response_body
 match meta: metadata /name
-matched: {"other":"foo\/bar\/gloo","name":"json","id":"1"}
+matched: {"other":"foo\/bar\/gloo","name":"json","_path":"\/name\/:name\/id\/:id\/*other","id":"1"}
 
 
 
@@ -168,3 +168,35 @@ GET /t
 --- response_body
 match meta: nil
 matched: {}
+
+
+
+=== TEST 6: /name/:name/id/:id
+--- config
+    location /t {
+        content_by_lua_block {
+            local json = require("cjson.safe")
+            local radix = require("resty.radixtree")
+            local rx = radix.new({
+                {
+                    paths = {"/aa/*", "/bb/cc/*", "/dd/ee/index.html"},
+                    methods = {"GET", "POST", "PUT"},
+                    hosts = {"foo.com", "*.bar.com"},
+                    metadata = "metadata /asf",
+                },
+            })
+
+            local opts = {matched = {}, method = "GET", uri = "/bb/cc/xx", host = "foo.com"}
+            local meta = rx:match("/bb/cc/xx", opts)
+            ngx.say("match meta: ", meta)
+            ngx.say("matched: ", json.encode(opts.matched))            
+
+        }
+    }
+--- request
+GET /t
+--- no_error_log
+[error]
+--- response_body
+match meta: metadata /asf
+matched: {"_path":"\/bb\/cc\/*",":ext":"xx","_method":"GET","_host":"foo.com"}

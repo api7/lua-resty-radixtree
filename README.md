@@ -221,7 +221,7 @@ make install
 ### Install Dependencies
 
 ```shell
-make dev
+make deps
 ```
 
 ## Benchmark

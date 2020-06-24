@@ -186,7 +186,7 @@ matched: {}
                 },
             })
 
-            local opts = {matched = {}, method = "GET", uri = "/bb/cc/xx", host = "foo.com"}
+            local opts = {matched = {}, method = "GET", host = "aa.bar.com"}
             local meta = rx:match("/bb/cc/xx", opts)
             ngx.say("match meta: ", meta)
             ngx.say("matched: ", json.encode(opts.matched))            
@@ -199,4 +199,4 @@ GET /t
 [error]
 --- response_body
 match meta: metadata /asf
-matched: {"_path":"\/bb\/cc\/*",":ext":"xx","_method":"GET","_host":"foo.com"}
+matched: {"_path":"\/bb\/cc\/*",":ext":"xx","_method":"GET","_host":"*.bar.com"}

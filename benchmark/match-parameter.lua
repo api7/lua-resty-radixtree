@@ -13,9 +13,9 @@ ngx.update_time()
 local start_time = ngx.now()
 
 local res
-local uri = "/user/gordon"
+local path = "/user/gordon"
 for _ = 1, match_times do
-    res = rx:match(uri)
+    res = rx:match(path)
 end
 
 ngx.update_time()

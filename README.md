@@ -86,9 +86,8 @@ The attributes of each element may contain these:
 
 |name       |option  |description|example|
 |:--------  |:--------|:-----------|:-----|
-|paths      |required|A list of client request uri. The default is a full match, but if the end of the path is `*`, it means that this is a prefix path. For example `/foo*`, it'll match `/foo/bar` or `/foo/glo/grey` etc.|{"/", "/aa", "/bb"}|
+|paths      |required|A list of client request path. The default is a full match, but if the end of the path is `*`, it means that this is a prefix path. For example `/foo*`, it'll match `/foo/bar` or `/foo/glo/grey` etc.|{"/", "/aa", "/bb"}|
 |hosts      |option  |A list of client request host, not only supports normal domain name, but also supports wildcard name.|{"foo.com", "*.bar.com"}|
-|uris      |option  |A list of client request uris, not only supports static uri, but also supports prefix uri.|{"/foo", "/bar/*"}|
 |remote_addrs|option  |A list of client remote address(IPv4 and IPv6), and we can use CIDR format, eg `192.168.1.0/24`.|{"127.0.0.1", "192.0.0.0/8", "::1", "fe80::/32"}|
 |methods    |option  |A list of method name. Here is full valid method list: "GET", "POST", "PUT", "DELETE", "PATCH", "HEAD", "OPTIONS", "CONNECT" and "TRACE".|{"GET", "POST"}|
 |vars       |option  |A list of `{var, operator, val}`. For example: {{var, operator, val}, {var, operator, val}, ...}, `{"arg_name", "==", "json"}` means the value of argument `name` expect to `json`. Here is the full [Operator List](#operator-list).|{{"arg_name", "==", "json"}, {"arg_age", ">", 18}}|
@@ -175,7 +174,7 @@ local rx = radix.new({
   * `method`: optional, method name of client request.
   * `host`: optional, client request host.
   * `remote_addr`: optional, client remote address like `192.168.1.100`.
-  * `uri`: optional, client request uri.
+  * `paths`: optional, a list of client request path.
   * `vars`: optional, a Lua table to fetch variable, default value is `ngx.var` to fetch Ningx builtin variable.
 
 Matchs the route by `method`, `path` and `host` etc, and return `metadata` if successful.
@@ -195,7 +194,6 @@ local metadata = rx:match(ngx.var.uri, {...})
   * `method`: optional, method name of client request.
   * `host`: optional, client request host.
   * `remote_addr`: optional, client remote address like `192.168.1.100`.
-  * `uri`: optional, client request uri.
   * `vars`: optional, a Lua table to fetch variable, default value is `ngx.var` to fetch Ningx builtin variable.
 
 Matchs the route by `method`, `path` and `host` etc, and call `handler` function if successful.

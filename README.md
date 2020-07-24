@@ -1,19 +1,26 @@
 # Table of Contents
 
-* [Name](#name)
-* [Status](#status)
-* [Synopsis](#synopsis)
-* [Methods](#methods)
-  * [new](#new)
-  * [match](#match)
-  * [dispatch](#dispatch)
-* [Install](#install)
-* [DEV ENV](#dev-env)
-* [Benchmark](#benchmark)
+- [Table of Contents](#table-of-contents)
+  - [Name](#name)
+  - [Synopsis](#synopsis)
+  - [Methods](#methods)
+    - [new](#new)
+    - [Path](#path)
+      - [Full path match](#full-path-match)
+      - [Prefix match](#prefix-match)
+      - [Parameters in path](#parameters-in-path)
+      - [Operator List](#operator-list)
+    - [match](#match)
+    - [dispatch](#dispatch)
+  - [Install](#install)
+    - [Compile and install](#compile-and-install)
+  - [DEV ENV](#dev-env)
+    - [Install Dependencies](#install-dependencies)
+  - [Benchmark](#benchmark)
 
 ## Name
 
-This is Lua-Openresty implementation library base on FFI for [rax](https://github.com/antirez/rax).
+This is Lua implementation library base on FFI for [rax](https://github.com/antirez/rax).
 
 [![Build Status](https://travis-ci.org/iresty/lua-resty-radixtree.svg?branch=master)](https://travis-ci.org/iresty/lua-resty-radixtree)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://github.com/iresty/lua-resty-radixtree/blob/master/LICENSE)
@@ -22,7 +29,9 @@ This project depends on [lua-resty-ipmatcher](https://github.com/iresty/lua-rest
 
 This project has been working in microservices API gateway [Apache APISIX](https://github.com/apache/incubator-apisix).
 
-The project is open sourced by Shenzhen [ZhiLiu](https://www.iresty.com/) Technology Company. In addition to this open source version, our company also provides a more powerful and performing commercial version, and provides technical support. If you are interested in our commercial version, please contact us. email: [yuansheng@iresty.com](yuansheng@iresty.com) .
+The project is open sourced by [Shenzhen ZhiLiu](https://www.apiseven.com/) Technology Co., Ltd.
+
+In addition to this open source version, our company also provides a more powerful and performing commercial version, and provides technical support. If you are interested in our commercial version, please [contact us](https://www.apiseven.com/).
 
 ## Synopsis
 

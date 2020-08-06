@@ -519,6 +519,8 @@ metadata /aa
             ngx.say(rx:match("/aa", {vars = ngx.var}))
             ngx.say(rx:match("/aa", {vars = {arg_k='2'}}))
             ngx.say(rx:match("/aa", {vars = {arg_k='4'}}))
+            ngx.say(rx:match("/aa", {vars = {}}))
+            ngx.say(rx:match("/aa", {vars = {arg_k=nil}}))
         }
     }
 --- request
@@ -528,4 +530,6 @@ GET /t?k=1
 --- response_body
 metadata /aa
 metadata /aa
+nil
+nil
 nil

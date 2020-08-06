@@ -498,3 +498,38 @@ GET /t?k=v
 [error]
 --- response_body
 metadata /aa
+
+
+
+=== TEST 18: IN: hit
+--- config
+    location /t {
+        content_by_lua_block {
+            local radix = require("resty.radixtree")
+            local rx = radix.new({
+                {
+                    paths = "/aa",
+                    metadata = "metadata /aa",
+                    vars = {
+                        {"arg_k", "in", {'1','2'}},
+                    },
+                }
+            })
+
+            ngx.say(rx:match("/aa", {vars = ngx.var}))
+            ngx.say(rx:match("/aa", {vars = {arg_k='2'}}))
+            ngx.say(rx:match("/aa", {vars = {arg_k='4'}}))
+            ngx.say(rx:match("/aa", {vars = {}}))
+            ngx.say(rx:match("/aa", {vars = {arg_k=nil}}))
+        }
+    }
+--- request
+GET /t?k=1
+--- no_error_log
+[error]
+--- response_body
+metadata /aa
+metadata /aa
+nil
+nil
+nil

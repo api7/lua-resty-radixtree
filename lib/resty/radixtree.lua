@@ -455,6 +455,17 @@ local function compare_gin(l_v, r_v, opts)
     return true
 end
 
+local function in_array(l_v, r_v)
+        if type(r_v) == "table" then
+            for _,v in ipairs(r_v) do
+                if v == l_v then
+                    return true
+                end
+            end
+        end
+        return false
+end
+
 local compare_funcs = {
     ["=="] = function (l_v, r_v)
         if type(r_v) == "number" then
@@ -491,6 +502,8 @@ local compare_funcs = {
         end
         return false
     end,
+    ["IN"] = in_array,    
+    ["in"] = in_array,    
 }
 
 

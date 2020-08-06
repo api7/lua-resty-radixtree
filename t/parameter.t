@@ -189,7 +189,7 @@ matched: {}
             local opts = {matched = {}, method = "GET", host = "aa.bar.com"}
             local meta = rx:match("/bb/cc/xx", opts)
             ngx.say("match meta: ", meta)
-            ngx.say("matched: ", json.encode(opts.matched))            
+            ngx.say("matched: ", json.encode(opts.matched))
 
         }
     }
@@ -203,7 +203,7 @@ matched: {"_path":"\/bb\/cc\/*",":ext":"xx","_method":"GET","_host":"*.bar.com"}
 
 
 
-=== TEST 7: /name/*name/foo
+=== TEST 7: /name/*name/foo (cached parameter)
 --- config
     location /t {
         content_by_lua_block {
@@ -211,7 +211,7 @@ matched: {"_path":"\/bb\/cc\/*",":ext":"xx","_method":"GET","_host":"*.bar.com"}
             local radix = require("resty.radixtree")
             local rx = radix.new({
                 {
-                    paths = {"/name/*name/foo"},
+                    paths = {"/name/:name/foo"},
                     metadata = "metadata /name",
                 },
             })
@@ -232,6 +232,36 @@ GET /t
 [error]
 --- response_body
 match meta: metadata /name
-matched: {"_path":"\/name\/*name\/foo","name":"json"}
+matched: {"_path":"\/name\/:name\/foo","name":"json"}
 match meta: nil
 matched: {}
+
+
+
+=== TEST 8: /name/*name/foo (no cached parameter)
+--- config
+    location /t {
+        content_by_lua_block {
+            local json = require("cjson.safe")
+            local radix = require("resty.radixtree")
+            local rx = radix.new({
+                {
+                    paths = {"/name/:name/foo"},
+                    metadata = "metadata /name",
+                },
+            })
+
+            local opts = {}
+            local meta = rx:match("/name/json/foo", opts)
+            ngx.say("match meta: ", meta)
+            meta = rx:match("/name/json", opts)
+            ngx.say("match meta: ", meta)
+        }
+    }
+--- request
+GET /t
+--- no_error_log
+[error]
+--- response_body
+match meta: metadata /name
+match meta: nil

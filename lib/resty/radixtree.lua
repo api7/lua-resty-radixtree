@@ -493,8 +493,8 @@ local compare_funcs = {
         return false
     end,
     ["IN"] = function (l_v, r_v)
-        if type(r_v) == "array" then
-            for k,v in pairs(r_v) do
+        if type(r_v) == "table" then
+            for _,v in ipairs(r_v) do
                 if v == l_v then
                     return true
                 end

@@ -171,6 +171,7 @@ local rx = radix.new({
 |>       |greater than|{"arg_age", ">", 24}|
 |<       |less than  |{"arg_age", "<", 24}|
 |~~      |Regular match|{"arg_name", "~~", "[a-z]+"}|
+|IN      |find in array |{"arg_name", "IN", {"1","2"}}|
 
 [Back to TOC](#table-of-contents)
 

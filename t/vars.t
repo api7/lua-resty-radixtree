@@ -501,7 +501,7 @@ metadata /aa
 
 
 
-=== TEST 9: IN: hit
+=== TEST 18: IN: hit
 --- config
     location /t {
         content_by_lua_block {
@@ -517,6 +517,8 @@ metadata /aa
             })
 
             ngx.say(rx:match("/aa", {vars = ngx.var}))
+            ngx.say(rx:match("/aa", {vars = {arg_k='2'}}))
+            ngx.say(rx:match("/aa", {vars = {arg_k='4'}}))
         }
     }
 --- request
@@ -525,3 +527,5 @@ GET /t?k=1
 [error]
 --- response_body
 metadata /aa
+metadata /aa
+nil

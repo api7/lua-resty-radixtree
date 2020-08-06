@@ -429,16 +429,12 @@ local function fetch_pat(path)
         end
     end
 
-    local pat = table.concat(res, [[\/]])
+    pat = table.concat(res, [[\/]])
     lru_pat:set(path, {pat, names}, 60 * 60)
     return pat, names
 end
 
 local function compare_gin(l_v, r_v, opts)
-    if not opts.matched then
-        return true
-    end
-
     local pat, names = fetch_pat(r_v)
     -- log_info("pat: ", require("cjson").encode(pat))
     local m = re_match(l_v, pat, "jo")
@@ -446,6 +442,9 @@ local function compare_gin(l_v, r_v, opts)
         return false
     end
 
+    if not opts.matched then
+        return true
+    end
 
     for i, v in ipairs(m) do
         local name = names[i]

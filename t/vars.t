@@ -511,7 +511,7 @@ metadata /aa
                     paths = "/aa",
                     metadata = "metadata /aa",
                     vars = {
-                        {"arg_k", "IN", {'1','2'}},
+                        {"arg_k", "in", {'1','2'}},
                     },
                 }
             })

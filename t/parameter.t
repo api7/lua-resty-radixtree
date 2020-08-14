@@ -265,3 +265,38 @@ GET /t
 --- response_body
 match meta: metadata /name
 match meta: nil
+
+
+
+=== TEST 9: /*name/foo
+--- config
+    location /t {
+        content_by_lua_block {
+            local json = require("cjson.safe")
+            local radix = require("resty.radixtree")
+            local rx = radix.new({
+                {
+                    paths = {"/*name/foo"},
+                    metadata = "metadata /*name/foo",
+                },
+            })
+
+            local opts = {matched = {}}
+            local meta = rx:match("/json", opts)
+            ngx.say("match meta: ", meta)
+            ngx.say("matched: ", json.encode(opts.matched))
+
+            meta = rx:match("/json/foo", opts)
+            ngx.say("match meta: ", meta)
+            ngx.say("matched: ", json.encode(opts.matched))
+
+            meta = rx:match("/json/foo/bar", opts)
+            ngx.say("match meta: ", meta)
+            ngx.say("matched: ", json.encode(opts.matched))
+        }
+    }
+--- request
+GET /t
+--- no_error_log
+[error]
+--- response_body

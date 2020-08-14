@@ -50,6 +50,7 @@ local sort_tab    = table.sort
 local ngx_re      = require("ngx.re")
 local ngx_null    = ngx.null
 local empty_table = {}
+local str_find    = string.find
 
 
 setmetatable(empty_table, {__newindex = function()
@@ -280,16 +281,21 @@ function pre_insert_route(self, path, route)
     end
 
     route_opts.path_org = path
+    route_opts.param = false
 
-    local pos = string.find(path, ':', 1, true)
+    local pos = str_find(path, ':', 1, true)
     if pos then
         path = path:sub(1, pos - 1)
         route_opts.path_op = "<="
         route_opts.path = path
+        route_opts.param = true
 
     else
-        pos = string.find(path, '*', 1, true)
+        pos = str_find(path, '*', 1, true)
         if pos then
+            if pos ~= #path then
+                route_opts.param = true
+            end
             path = path:sub(1, pos - 1)
             route_opts.path_op = "<="
         else
@@ -434,10 +440,14 @@ local function fetch_pat(path)
     return pat, names
 end
 
-local function compare_gin(l_v, r_v, opts)
-    local pat, names = fetch_pat(r_v)
+local function compare_param(req_path, route, opts)
+    if not opts.matched and not route.param then
+        return true
+    end
+
+    local pat, names = fetch_pat(route.path_org)
     -- log_info("pat: ", require("cjson").encode(pat))
-    local m = re_match(l_v, pat, "jo")
+    local m = re_match(req_path, pat, "jo")
     if not m then
         return false
     end
@@ -502,8 +512,8 @@ local compare_funcs = {
         end
         return false
     end,
-    ["IN"] = in_array,    
-    ["in"] = in_array,    
+    ["IN"] = in_array,
+    ["in"] = in_array,
 }
 
 
@@ -622,7 +632,7 @@ local function _match_from_routes(routes, path, opts, ...)
         if match_route_opts(route, opts, ...) then
             -- log_info("matched route: ", require("cjson").encode(route))
             -- log_info("matched path: ", path)
-            if compare_gin(path, route.path_org, opts) then
+            if compare_param(path, route, opts) then
                     if opts_matched_exists then
                         opts.matched._path = route.path_org
                     end

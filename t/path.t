@@ -96,6 +96,7 @@ nil
 GET /t
 --- no_error_log
 [error]
+pcre pat:
 --- response_body
 metadata multipe path 1
 metadata multipe path 1

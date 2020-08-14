@@ -265,3 +265,5 @@ GET /t
 --- response_body
 match meta: metadata /name
 match meta: nil
+--- error_log
+pcre pat:

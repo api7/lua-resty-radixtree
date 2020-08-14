@@ -446,7 +446,7 @@ local function compare_param(req_path, route, opts)
     end
 
     local pat, names = fetch_pat(route.path_org)
-    -- log_info("pat: ", require("cjson").encode(pat))
+    log_info("pcre pat: ", pat)
     local m = re_match(req_path, pat, "jo")
     if not m then
         return false
@@ -633,9 +633,9 @@ local function _match_from_routes(routes, path, opts, ...)
             -- log_info("matched route: ", require("cjson").encode(route))
             -- log_info("matched path: ", path)
             if compare_param(path, route, opts) then
-                    if opts_matched_exists then
-                        opts.matched._path = route.path_org
-                    end
+                if opts_matched_exists then
+                    opts.matched._path = route.path_org
+                end
                 return route
             end
         end

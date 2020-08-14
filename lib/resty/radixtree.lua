@@ -452,6 +452,10 @@ local function compare_param(req_path, route, opts)
         return false
     end
 
+    if m[0] ~= req_path then
+        return false
+    end
+
     if not opts.matched then
         return true
     end

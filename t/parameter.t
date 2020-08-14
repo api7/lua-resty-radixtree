@@ -171,39 +171,7 @@ matched: {}
 
 
 
-=== TEST 6: /name/:name/id/:id
---- config
-    location /t {
-        content_by_lua_block {
-            local json = require("cjson.safe")
-            local radix = require("resty.radixtree")
-            local rx = radix.new({
-                {
-                    paths = {"/aa/*", "/bb/cc/*", "/dd/ee/index.html"},
-                    methods = {"GET", "POST", "PUT"},
-                    hosts = {"foo.com", "*.bar.com"},
-                    metadata = "metadata /asf",
-                },
-            })
-
-            local opts = {matched = {}, method = "GET", host = "aa.bar.com"}
-            local meta = rx:match("/bb/cc/xx", opts)
-            ngx.say("match meta: ", meta)
-            ngx.say("matched: ", json.encode(opts.matched))
-
-        }
-    }
---- request
-GET /t
---- no_error_log
-[error]
---- response_body
-match meta: metadata /asf
-matched: {"_path":"\/bb\/cc\/*",":ext":"xx","_method":"GET","_host":"*.bar.com"}
-
-
-
-=== TEST 7: /name/*name/foo (cached parameter)
+=== TEST 6: /name/:name/foo (cached parameter)
 --- config
     location /t {
         content_by_lua_block {
@@ -238,7 +206,7 @@ matched: {}
 
 
 
-=== TEST 8: /name/*name/foo (no cached parameter)
+=== TEST 7: /name/:name/foo (no cached parameter)
 --- config
     location /t {
         content_by_lua_block {
@@ -265,3 +233,5 @@ GET /t
 --- response_body
 match meta: metadata /name
 match meta: nil
+--- error_log
+pcre pat:

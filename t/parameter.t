@@ -235,3 +235,44 @@ match meta: metadata /name
 match meta: nil
 --- error_log
 pcre pat:
+
+
+
+=== TEST 8: /:name/foo
+--- config
+    location /t {
+        content_by_lua_block {
+            local json = require("cjson.safe")
+            local radix = require("resty.radixtree")
+            local rx = radix.new({
+                {
+                    paths = {"/:name/foo"},
+                    metadata = "metadata /:name/foo",
+                },
+            })
+
+            local opts = {matched = {}}
+            local meta = rx:match("/json/", opts)
+            ngx.say("match meta: ", meta)
+
+            meta = rx:match("/json/bar", opts)
+            ngx.say("match meta: ", meta)
+
+            meta = rx:match("/json/foo", opts)
+            ngx.say("match meta: ", meta)
+
+            meta = rx:match("/json/foo/bar", opts)
+            ngx.say("match meta: ", meta)
+        }
+    }
+--- request
+GET /t
+--- no_error_log
+[error]
+--- response_body
+match meta: nil
+match meta: nil
+match meta: metadata /:name/foo
+match meta: nil
+--- error_log
+pcre pat:

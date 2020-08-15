@@ -204,7 +204,7 @@ local metadata = rx:match(ngx.var.uri, {...})
   * `method`: optional, method name of client request.
   * `host`: optional, client request host.
   * `remote_addr`: optional, client remote address like `192.168.1.100`.
-  * `vars`: optional, a Lua table to fetch variable, default value is `ngx.var` to fetch Ningx builtin variable.
+  * `vars`: optional, a Lua table to fetch variable, default value is `ngx.var` to fetch Nginx builtin variable.
 
 Matchs the route by `method`, `path` and `host` etc, and call `handler` function if successful.
 

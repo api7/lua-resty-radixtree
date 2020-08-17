@@ -31,7 +31,7 @@ default: compile
 .PHONY: test
 test: compile
 	TEST_NGINX_LOG_LEVEL=info \
-	prove -I../test-nginx/lib -r -s t/
+	prove -I../test-nginx/lib -I. -r -s t/
 
 
 ### clean:        Remove generated files

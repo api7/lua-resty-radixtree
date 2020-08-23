@@ -619,6 +619,13 @@ end
 
 
 local function _match_from_routes(routes, path, opts, ...)
+    if opts == empty_table then
+        local route = routes[1]
+        if not route or route.method == 0 then
+            return route
+        end
+    end
+
     local opts_matched_exists = (opts.matched ~= nil)
     for _, route in ipairs(routes) do
         if route.path_op == "=" then
@@ -657,8 +664,8 @@ local function match_route(self, path, opts, ...)
     end
 
     local routes = self.hash_path[path]
-    local opts_matched_exists = (opts.matched ~= nil)
     if routes then
+        local opts_matched_exists = (opts.matched ~= nil)
         for _, route in ipairs(routes) do
             if match_route_opts(route, opts, ...) then
                 if opts_matched_exists then
@@ -693,10 +700,6 @@ local function match_route(self, path, opts, ...)
 end
 
 function _M.match(self, path, opts)
-    if type(path) ~= "string" then
-        error("invalid argument path", 2)
-    end
-
     local route, err = match_route(self, path, opts or empty_table)
     if not route then
         if err then

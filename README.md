@@ -248,23 +248,23 @@ resty -I=./lib -I=./deps/share/lua/5.1 benchmark/match-parameter.lua
 matched res: 1
 route count: 100000
 match times: 1000000
-time used  : 0.51699995994568 sec
-QPS        : 1934236
-each time  : 0.51699995994568 ns
+time used  : 1.1389999389648 sec
+QPS        : 877963
+each time  : 1.1389999389648 ns
 
 resty -I=./lib -I=./deps/share/lua/5.1 benchmark/match-prefix.lua
 matched res: 500
 route count: 100000
 match times: 1000000
-time used  : 0.625 sec
-QPS        : 1600000
+time used  : 0.54299998283386 sec
+QPS        : 1841620
 
 resty -I=./lib -I=./deps/share/lua/5.1 benchmark/match-static.lua
 matched res: 500
 route count: 100000
 match times: 1000000
-time used  : 0.10099983215332 sec
-QPS        : 9901006
+time used  : 0.10500001907349 sec
+QPS        : 9523807
 ```
 
 [Back to TOC](#table-of-contents)

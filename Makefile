@@ -85,6 +85,10 @@ bench:
 	@echo ""
 	resty -I=./lib -I=./deps/share/lua/5.1 benchmark/match-static.lua
 	@echo ""
+	resty -I=./lib -I=./deps/share/lua/5.1 benchmark/match-hosts.lua
+	@echo ""
+	resty -I=./lib -I=./deps/share/lua/5.1 benchmark/match-wildcard-hosts.lua
+	@echo ""
 
 
 ### help:         Show Makefile rules

@@ -30,6 +30,7 @@ local new_tab     = base.new_tab
 local tonumber    = tonumber
 local ipairs      = ipairs
 local ffi         = require("ffi")
+local C           = ffi.C
 local ffi_cast    = ffi.cast
 local ffi_cdef    = ffi.cdef
 local insert_tab  = table.insert
@@ -101,6 +102,8 @@ end
 
 
 ffi_cdef[[
+    int memcmp(const void *s1, const void *s2, size_t n);
+
     void *radix_tree_new();
     int radix_tree_destroy(void *t);
     int radix_tree_insert(void *t, const unsigned char *buf, size_t len,
@@ -124,6 +127,18 @@ end
 
 
 local _M = { _VERSION = 1.7 }
+
+
+local function has_suffix(s, suffix)
+    if type(s) ~= "string" or type(suffix) ~= "string" then
+        return false
+    end
+    if #s < #suffix then
+        return false
+    end
+    local rc = C.memcmp(ffi.cast("char *", s) + #s - #suffix, suffix, #suffix)
+    return rc == 0
+end
 
 
 -- only work under lua51 or luajit
@@ -258,9 +273,7 @@ function pre_insert_route(self, path, route)
             local is_wildcard = false
             if h and h:sub(1, 1) == '*' then
                 is_wildcard = true
-                h = h:sub(2):reverse()
-            else
-                h = h:reverse()
+                h = h:sub(2)
             end
 
             insert_tab(route_opts.hosts, is_wildcard)
@@ -272,9 +285,7 @@ function pre_insert_route(self, path, route)
         local host = hosts
         if host:sub(1, 1) == '*' then
             is_wildcard = true
-            host = host:sub(2):reverse()
-        else
-            host = host:reverse()
+            host = host:sub(2)
         end
 
         route_opts.hosts = {is_wildcard, host}
@@ -383,20 +394,11 @@ end
 
 
 local function match_host(route_host_is_wildcard, route_host, request_host)
-    if type(request_host) ~= "string" or #route_host > #request_host then
-        return false
-    end
-
     if not route_host_is_wildcard then
         return route_host == request_host
     end
 
-    local i = request_host:find(route_host, 1, true)
-    if i ~= 1 then
-        return false
-    end
-
-    return true
+    return has_suffix(request_host, route_host)
 end
 
 
@@ -564,20 +566,16 @@ local function match_route_opts(route, opts, ...)
     if route.hosts then
         local matched = false
 
-        if opts.host and not opts.host_reversed then
-            opts.host_reversed = opts.host:reverse()
-        end
-
         local hosts = route.hosts
-        local reverse_host = opts.host_reversed
-        if reverse_host then
+        local host = opts.host
+        if host then
             for i = 1, #hosts, 2 do
-                if match_host(hosts[i], hosts[i + 1], reverse_host) then
+                if match_host(hosts[i], hosts[i + 1], host) then
                     if opts_matched_exists then
                         if hosts[i] then
-                            opts.matched._host = (hosts[i + 1] .. "*"):reverse()
+                            opts.matched._host = "*" .. hosts[i + 1]
                         else
-                            opts.matched._host = hosts[i + 1]:reverse()
+                            opts.matched._host = opts.host
                         end
                     end
                     matched = true

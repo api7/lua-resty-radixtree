@@ -415,7 +415,7 @@ local function fetch_pat(path)
     end
 
     clear_tab(tmp)
-    local res = ngx_re.split(path, "/", tmp)
+    local res = ngx_re.split(path, "/", "jo", nil, nil, tmp)
     if not res then
         return false
     end

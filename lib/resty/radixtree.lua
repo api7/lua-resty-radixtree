@@ -26,6 +26,7 @@ local lrucache    = require("resty.lrucache")
 local bit         = require("bit")
 local ngx         = ngx
 local table       = table
+local clear_tab   = base.clear_tab
 local new_tab     = base.new_tab
 local tonumber    = tonumber
 local ipairs      = ipairs
@@ -39,7 +40,9 @@ local io          = io
 local package     = package
 local getmetatable=getmetatable
 local setmetatable=setmetatable
+local select      = select
 local type        = type
+local unpack      = unpack
 local error       = error
 local newproxy    = newproxy
 local cur_level   = ngx.config.subsystem == "http" and
@@ -536,7 +539,7 @@ local function compare_val(l_v, op, r_v, opts)
 end
 
 
-local function match_route_opts(route, opts, ...)
+local function match_route_opts(route, opts, args)
     local method = opts.method
     local opts_matched_exists = (opts.matched ~= nil)
     if route.method ~= 0 then
@@ -569,7 +572,8 @@ local function match_route_opts(route, opts, ...)
         local hosts = route.hosts
         local host = opts.host
         if host then
-            for i = 1, #hosts, 2 do
+            local len = #hosts
+            for i = 1, len, 2 do
                 if match_host(hosts[i], hosts[i + 1], host) then
                     if opts_matched_exists then
                         if hosts[i] then
@@ -607,7 +611,16 @@ local function match_route_opts(route, opts, ...)
     end
 
     if route.filter_fun then
-        if not route.filter_fun(opts.vars or ngx_var, opts, ...) then
+        local fn = route.filter_fun
+        local ok
+        if args then
+            -- now we can safely clear the self.args
+            ok = fn(opts.vars or ngx_var, opts, unpack(args))
+        else
+            ok = fn(opts.vars or ngx_var, opts)
+        end
+
+        if not ok then
             return false
         end
     end
@@ -616,7 +629,7 @@ local function match_route_opts(route, opts, ...)
 end
 
 
-local function _match_from_routes(routes, path, opts, ...)
+local function _match_from_routes(routes, path, opts, args)
     if opts == empty_table then
         local route = routes[1]
         if not route or route.method == 0 then
@@ -628,7 +641,7 @@ local function _match_from_routes(routes, path, opts, ...)
     for _, route in ipairs(routes) do
         if route.path_op == "=" then
             if route.path == path then
-                if match_route_opts(route, opts, ...) then
+                if match_route_opts(route, opts, args) then
                     if opts_matched_exists then
                         opts.matched._path = path
                     end
@@ -638,7 +651,7 @@ local function _match_from_routes(routes, path, opts, ...)
             goto continue
         end
 
-        if match_route_opts(route, opts, ...) then
+        if match_route_opts(route, opts, args) then
             -- log_info("matched route: ", require("cjson").encode(route))
             -- log_info("matched path: ", path)
             if compare_param(path, route, opts) then
@@ -656,7 +669,7 @@ local function _match_from_routes(routes, path, opts, ...)
 end
 
 
-local function match_route(self, path, opts, ...)
+local function match_route(self, path, opts, args)
     if opts.matched then
         clear_tab(opts.matched)
     end
@@ -665,7 +678,7 @@ local function match_route(self, path, opts, ...)
     if routes then
         local opts_matched_exists = (opts.matched ~= nil)
         for _, route in ipairs(routes) do
-            if match_route_opts(route, opts, ...) then
+            if match_route_opts(route, opts, args) then
                 if opts_matched_exists then
                     opts.matched._path = path
                 end
@@ -687,7 +700,7 @@ local function match_route(self, path, opts, ...)
 
         routes = self.match_data[idx]
         if routes then
-            local route = _match_from_routes(routes, path, opts, ...)
+            local route = _match_from_routes(routes, path, opts, args)
             if route then
                 return route
             end
@@ -715,7 +728,24 @@ function _M.dispatch(self, path, opts, ...)
         error("invalid argument path", 2)
     end
 
-    local route, err = match_route(self, path, opts or empty_table, ...)
+    local args
+    local len = select('#', ...)
+    if len > 0 then
+        if not self.args then
+            self.args = {...}
+        else
+            clear_tab(self.args)
+            for i = 1, len do
+                self.args[i] = select(i, ...)
+            end
+        end
+
+        -- To keep the self.args in safe,
+        -- we can't yield until filter_fun is called
+        args = self.args
+    end
+
+    local route, err = match_route(self, path, opts or empty_table, args)
     if not route then
         if err then
             return nil, err

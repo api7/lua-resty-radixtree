@@ -615,7 +615,9 @@ local function match_route_opts(route, opts, args)
         local ok
         if args then
             -- now we can safely clear the self.args
-            ok = fn(opts.vars or ngx_var, opts, unpack(args))
+            local args_len = args[0]
+            args[0] = nil
+            ok = fn(opts.vars or ngx_var, opts, unpack(args, 1, args_len))
         else
             ok = fn(opts.vars or ngx_var, opts)
         end
@@ -743,6 +745,7 @@ function _M.dispatch(self, path, opts, ...)
         -- To keep the self.args in safe,
         -- we can't yield until filter_fun is called
         args = self.args
+        args[0] = len
     end
 
     local route, err = match_route(self, path, opts or empty_table, args)

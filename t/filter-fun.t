@@ -140,3 +140,37 @@ handler /aa
 true
 handler /aa
 true
+
+
+
+=== TEST 5: dispatch(path, opt, ...) with nil arg
+--- config
+    location /t {
+        content_by_lua_block {
+            local opts = {vars = ngx.var}
+            local radix = require("resty.radixtree")
+            local rx = radix.new({
+                {
+                    paths = "/aa",
+                    filter_fun = function(vars, opt, a, b, c)
+                        ngx.log(ngx.WARN, "get arguments: ", a, ",", b, ",", c)
+                        return true
+                    end,
+                    handler = function (...)
+                        ngx.say("handler /aa")
+                    end,
+                }
+            })
+
+            ngx.say(rx:dispatch("/aa", opts, 1, nil, 3))
+        }
+    }
+--- request
+GET /t
+--- no_error_log
+[error]
+--- error_log
+get arguments: 1,nil,3
+--- response_body
+handler /aa
+true

@@ -235,7 +235,7 @@ make deps
 ## Benchmark
 
 We wrote some simple benchmark scripts.
-Machine environment: 9600kf 3.7G CPU.
+Machine environment: MacBook Pro (16-inch, 2019), CPU 2.3 GHz Intel Core i9.
 
 ```shell
 $ make
@@ -248,23 +248,37 @@ resty -I=./lib -I=./deps/share/lua/5.1 benchmark/match-parameter.lua
 matched res: 1
 route count: 100000
 match times: 1000000
-time used  : 1.1389999389648 sec
-QPS        : 877963
-each time  : 1.1389999389648 ns
+time used  : 0.46799993515015 sec
+QPS        : 2136752
+each time  : 0.46799993515015 ns
 
 resty -I=./lib -I=./deps/share/lua/5.1 benchmark/match-prefix.lua
 matched res: 500
 route count: 100000
 match times: 1000000
-time used  : 0.54299998283386 sec
-QPS        : 1841620
+time used  : 0.43799996376038 sec
+QPS        : 2283105
 
 resty -I=./lib -I=./deps/share/lua/5.1 benchmark/match-static.lua
 matched res: 500
 route count: 100000
 match times: 1000000
-time used  : 0.10500001907349 sec
-QPS        : 9523807
+time used  : 0.082000017166138 sec
+QPS        : 12195119
+
+resty -I=./lib -I=./deps/share/lua/5.1 benchmark/match-hosts.lua
+matched res: 500
+route count: 1000
+match times: 100000
+time used  : 1.6740000247955 sec
+QPS        : 59737
+
+resty -I=./lib -I=./deps/share/lua/5.1 benchmark/match-wildcard-hosts.lua
+matched res: 500
+route count: 1000
+match times: 5000
+time used  : 0.11899995803833 sec
+QPS        : 42016
 ```
 
 [Back to TOC](#table-of-contents)

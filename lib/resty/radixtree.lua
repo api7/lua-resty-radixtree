@@ -20,7 +20,6 @@
 
 local ipmatcher   = require("resty.ipmatcher")
 local base        = require("resty.core.base")
-local clear_tab   = require("table.clear")
 local clone_tab   = require("table.clone")
 local lrucache    = require("resty.lrucache")
 local bit         = require("bit")

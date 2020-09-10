@@ -247,38 +247,38 @@ $ make bench
 resty -I=./lib -I=./deps/share/lua/5.1 benchmark/match-parameter.lua
 matched res: 1
 route count: 100000
-match times: 1000000
-time used  : 0.46799993515015 sec
-QPS        : 2136752
-each time  : 0.46799993515015 ns
+match times: 10000000
+time used  : 3.3849999904633 sec
+QPS        : 2954209
+each time  : 0.33849999904633 ns
 
 resty -I=./lib -I=./deps/share/lua/5.1 benchmark/match-prefix.lua
 matched res: 500
 route count: 100000
 match times: 1000000
-time used  : 0.43799996376038 sec
-QPS        : 2283105
+time used  : 0.4229998588562 sec
+QPS        : 2364066
 
 resty -I=./lib -I=./deps/share/lua/5.1 benchmark/match-static.lua
 matched res: 500
 route count: 100000
-match times: 1000000
-time used  : 0.082000017166138 sec
-QPS        : 12195119
+match times: 10000000
+time used  : 0.78799986839294 sec
+QPS        : 12690357
 
 resty -I=./lib -I=./deps/share/lua/5.1 benchmark/match-hosts.lua
 matched res: 500
 route count: 1000
 match times: 100000
-time used  : 1.6740000247955 sec
-QPS        : 59737
+time used  : 1.6989998817444 sec
+QPS        : 58858
 
 resty -I=./lib -I=./deps/share/lua/5.1 benchmark/match-wildcard-hosts.lua
 matched res: 500
 route count: 1000
-match times: 5000
-time used  : 0.11899995803833 sec
-QPS        : 42016
+match times: 50000
+time used  : 1.2469999790192 sec
+QPS        : 40096
 ```
 
 [Back to TOC](#table-of-contents)

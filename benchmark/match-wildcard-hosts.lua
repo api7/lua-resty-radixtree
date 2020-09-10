@@ -1,6 +1,6 @@
 local radix = require("resty.radixtree")
 local route_count = 1000 * 1
-local match_times = 1000 * 5
+local match_times = 1000 * 50
 
 local path = "/12345"
 local routes = {}

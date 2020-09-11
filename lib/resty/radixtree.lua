@@ -28,6 +28,7 @@ local ngx         = ngx
 local table       = table
 local clear_tab   = base.clear_tab
 local new_tab     = base.new_tab
+local move_tab    = table.move
 local tonumber    = tonumber
 local ipairs      = ipairs
 local ffi         = require("ffi")
@@ -50,7 +51,6 @@ local cur_level   = ngx.config.subsystem == "http" and
 local ngx_var     = ngx.var
 local re_find     = ngx.re.find
 local re_match    = ngx.re.match
-local sort_tab    = table.sort
 local ngx_re      = require("ngx.re")
 local ngx_null    = ngx.null
 local empty_table = {}
@@ -180,6 +180,16 @@ local function sort_route(route_a, route_b)
     return (route_a.priority or 0) > (route_b.priority or 0)
 end
 
+local function insert_tab_in_order(tab, val, func)
+    for i, elem in ipairs(tab) do
+        if func(val, elem) then
+            move_tab(tab, i, #tab, i + 1)
+            tab[i] = val
+            return
+        end
+    end
+    insert_tab(tab, val)
+end
 
 local function insert_route(self, opts)
     local path = opts.path
@@ -191,10 +201,9 @@ local function insert_route(self, opts)
         if not self.hash_path[path] then
             self.hash_path[path] = {opts}
         else
-            insert_tab(self.hash_path[path], opts)
+            insert_tab_in_order(self.hash_path[path], opts, sort_route)
         end
 
-        sort_tab(self.hash_path[path], sort_route)
         return true
     end
 
@@ -203,8 +212,7 @@ local function insert_route(self, opts)
         local idx = tonumber(ffi_cast('intptr_t', data_idx))
         local routes = self.match_data[idx]
         if routes and routes[1].path == path then
-            insert_tab(routes, opts)
-            sort_tab(routes, sort_route)
+            insert_tab_in_order(routes, opts, sort_route)
             return true
         end
     end

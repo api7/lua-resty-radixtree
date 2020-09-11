@@ -5,7 +5,7 @@ local match_times = 1000 * 100
 local path = "/12345"
 local routes = {}
 for i = 1, route_count do
-    routes[i] = {paths = {path}, hosts = {ngx.md5(i)}, metadata = i}
+    routes[i] = {paths = {path}, priority = i, hosts = {ngx.md5(i)}, metadata = i}
 end
 
 local rx = radix.new(routes)

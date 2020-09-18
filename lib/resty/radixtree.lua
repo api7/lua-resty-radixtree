@@ -482,14 +482,14 @@ local function compare_param(req_path, route, opts)
 end
 
 local function in_array(l_v, r_v)
-        if type(r_v) == "table" then
-            for _,v in ipairs(r_v) do
-                if v == l_v then
-                    return true
-                end
+    if type(r_v) == "table" then
+        for _,v in ipairs(r_v) do
+            if v == l_v then
+                return true
             end
         end
-        return false
+    end
+    return false
 end
 
 local compare_funcs = {

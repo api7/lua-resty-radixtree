@@ -39,8 +39,8 @@ local function encode(v)
     end
 
     if typ == 'table' then
-        local n = isarray(v)
-        if n then
+        if isarray(v) then
+            local n = #v
             local bits = new_tab(n, 0)
             for i, elem in ipairs(v) do
                 bits[i] = encode(elem)

@@ -459,6 +459,10 @@ local function compare_param(req_path, route, opts)
 
     local pat, names = fetch_pat(route.path_org)
     log_info("pcre pat: ", pat)
+    if #names == 0 then
+        return true
+    end
+
     local m = re_match(req_path, pat, "jo")
     if not m then
         return false
@@ -663,26 +667,6 @@ local function _match_from_routes(routes, path, opts, args)
         if match_route_opts(route, opts, args) then
             -- log_info("matched route: ", require("cjson").encode(route))
             -- log_info("matched path: ", path)
-
-            --if the route is prefix matching, no compare param is required
-            local is_prefix_matching = string.sub(route.path_org, #route.path_org) == '*'
-
-            local matched_has_value
-            if opts.matched then
-                if opts.matched._method ~= nil or opts.matched._host ~= nil then
-                    matched_has_value = true
-                end
-            end
-
-            local vars_has_value = route.vars and #route.vars > 0
-
-            if is_prefix_matching and matched_has_value or vars_has_value then
-                if opts_matched_exists then
-                    opts.matched._path = route.path_org
-                end
-                return route
-            end
-
             if compare_param(path, route, opts) then
                 if opts_matched_exists then
                     opts.matched._path = route.path_org

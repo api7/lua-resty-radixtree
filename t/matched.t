@@ -6,6 +6,7 @@ repeat_each(1);
 run_tests();
 
 __DATA__
+
 === TEST 1: prefix matching with method, and matched is not nil.
 --- config
     location /t {
@@ -28,6 +29,9 @@ GET /t
 [error]
 --- response_body
 metadata prefix matching with GET, matched = {}
+
+
+
 === TEST 2: prefix matching with host, and matched is not nil.
 --- config
     location /t {
@@ -51,6 +55,9 @@ GET /t
 [error]
 --- response_body
 metadata prefix matching with host, matched = {}
+
+
+
 === TEST 3: prefix matching with vars, and matched is not nil.
 --- config
     location /t {
@@ -76,6 +83,9 @@ GET /t?k=v
 [error]
 --- response_body
 metadata prefix matching with host, matched = {}
+
+
+
 === TEST 4: prefix matching with method, host, vars and matched is not nil.
 --- config
     location /t {
@@ -108,6 +118,9 @@ GET /t?k=v
 [error]
 --- response_body
 metadata prefix matching with method, host, vars, matched = {}
+
+
+
 === TEST 5: get matched when callback route.handler after dispatch success
 --- config
     location /t {
@@ -142,4 +155,3 @@ GET /t?k=v
 [error]
 --- response_body
 after dispatch success get matched: {"_path":"\/hello*","_method":"GET","_host":"foo.com"}
-

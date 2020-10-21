@@ -1,3 +1,5 @@
+local new_tab  = require("table.new")
+local isarray  = require("table.isarray")
 local ngx_null = ngx.null
 local tostring = tostring
 local gsub     = string.gsub
@@ -6,9 +8,6 @@ local pairs    = pairs
 local ipairs   = ipairs
 local concat   = table.concat
 local type     = type
-local new_tab  = require("table.new")
-
-local _M = {version = 0.1}
 
 local metachars = {
     ['\t'] = '\\t',
@@ -17,27 +16,15 @@ local metachars = {
     ['\r'] = '\\r',
     ['\n'] = '\\n',
 }
+local _M = {}
+
 
 local function encode_str(s)
-    -- XXX we will rewrite this when string.buffer is implemented
-    -- in LuaJIT 2.1 because string.gsub cannot be JIT compiled.
     return gsub(s, '["\\\r\n\t]', metachars)
 end
 
-local function is_arr(t)
-    local exp = 1
-    for k, _ in pairs(t) do
-        if k ~= exp then
-            return nil
-        end
-        exp = exp + 1
-    end
-    return exp - 1
-end
 
-local encode
-
-encode = function (v)
+local function encode(v)
     if v == nil or v == ngx_null then
         return "null"
     end
@@ -52,7 +39,7 @@ encode = function (v)
     end
 
     if typ == 'table' then
-        local n = is_arr(v)
+        local n = isarray(v)
         if n then
             local bits = new_tab(n, 0)
             for i, elem in ipairs(v) do
@@ -81,5 +68,6 @@ encode = function (v)
     return '"<' .. typ .. '>"'
 end
 _M.encode = encode
+
 
 return _M

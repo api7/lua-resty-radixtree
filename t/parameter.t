@@ -11,7 +11,7 @@ __DATA__
 --- config
     location /t {
         content_by_lua_block {
-            local json = require("cjson.safe")
+            local json = require("ljson")
             local radix = require("resty.radixtree")
             local rx = radix.new({
                 {
@@ -36,9 +36,9 @@ GET /t
 [error]
 --- response_body
 match meta: metadata /name
-matched: {"_path":"\/name\/*name","name":"json"}
+matched: {"_path":"/name/*name","name":"json"}
 match meta: metadata /name
-matched: {"_path":"\/name\/*name","name":""}
+matched: {"_path":"/name/*name","name":""}
 
 
 
@@ -46,7 +46,7 @@ matched: {"_path":"\/name\/*name","name":""}
 --- config
     location /t {
         content_by_lua_block {
-            local json = require("cjson.safe")
+            local json = require("ljson")
             local radix = require("resty.radixtree")
             local rx = radix.new({
                 {
@@ -71,9 +71,9 @@ GET /t
 [error]
 --- response_body
 match meta: metadata /name
-matched: {"_path":"\/name\/*",":ext":"json\/foo\/bar"}
+matched: {":ext":"json/foo/bar","_path":"/name/*"}
 match meta: metadata /name
-matched: {"_path":"\/name\/*",":ext":""}
+matched: {":ext":"","_path":"/name/*"}
 
 
 
@@ -81,7 +81,7 @@ matched: {"_path":"\/name\/*",":ext":""}
 --- config
     location /t {
         content_by_lua_block {
-            local json = require("cjson.safe")
+            local json = require("ljson")
             local radix = require("resty.radixtree")
             local rx = radix.new({
                 {
@@ -107,9 +107,9 @@ GET /t
 [error]
 --- response_body
 match meta: metadata /name
-matched: {"name":"json","_path":"\/name\/:name\/id\/:id","id":"1"}
+matched: {"_path":"/name/:name/id/:id","id":"1","name":"json"}
 match meta: nil
-matched: {}
+matched: []
 
 
 
@@ -117,7 +117,7 @@ matched: {}
 --- config
     location /t {
         content_by_lua_block {
-            local json = require("cjson.safe")
+            local json = require("ljson")
             local radix = require("resty.radixtree")
             local rx = radix.new({
                 {
@@ -138,7 +138,7 @@ GET /t
 [error]
 --- response_body
 match meta: metadata /name
-matched: {"other":"foo\/bar\/gloo","name":"json","_path":"\/name\/:name\/id\/:id\/*other","id":"1"}
+matched: {"_path":"/name/:name/id/:id/*other","id":"1","name":"json","other":"foo/bar/gloo"}
 
 
 
@@ -146,7 +146,7 @@ matched: {"other":"foo\/bar\/gloo","name":"json","_path":"\/name\/:name\/id\/:id
 --- config
     location /t {
         content_by_lua_block {
-            local json = require("cjson.safe")
+            local json = require("ljson")
             local radix = require("resty.radixtree")
             local rx = radix.new({
                 {
@@ -167,7 +167,7 @@ GET /t
 [error]
 --- response_body
 match meta: nil
-matched: {}
+matched: []
 
 
 
@@ -175,7 +175,7 @@ matched: {}
 --- config
     location /t {
         content_by_lua_block {
-            local json = require("cjson.safe")
+            local json = require("ljson")
             local radix = require("resty.radixtree")
             local rx = radix.new({
                 {
@@ -200,9 +200,9 @@ GET /t
 [error]
 --- response_body
 match meta: metadata /name
-matched: {"_path":"\/name\/:name\/foo","name":"json"}
+matched: {"_path":"/name/:name/foo","name":"json"}
 match meta: nil
-matched: {}
+matched: []
 
 
 
@@ -210,7 +210,7 @@ matched: {}
 --- config
     location /t {
         content_by_lua_block {
-            local json = require("cjson.safe")
+            local json = require("ljson")
             local radix = require("resty.radixtree")
             local rx = radix.new({
                 {
@@ -242,7 +242,7 @@ pcre pat:
 --- config
     location /t {
         content_by_lua_block {
-            local json = require("cjson.safe")
+            local json = require("ljson")
             local radix = require("resty.radixtree")
             local rx = radix.new({
                 {

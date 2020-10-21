@@ -20,7 +20,6 @@
 
 local ipmatcher   = require("resty.ipmatcher")
 local base        = require("resty.core.base")
-local clear_tab   = require("table.clear")
 local clone_tab   = require("table.clone")
 local lrucache    = require("resty.lrucache")
 local bit         = require("bit")
@@ -641,18 +640,6 @@ local function _match_from_routes(routes, path, opts, args)
 
     local opts_matched_exists = (opts.matched ~= nil)
     for _, route in ipairs(routes) do
-        if route.path_op == "=" then
-            if route.path == path then
-                if match_route_opts(route, opts, args) then
-                    if opts_matched_exists then
-                        opts.matched._path = path
-                    end
-                    return route
-                end
-            end
-            goto continue
-        end
-
         if match_route_opts(route, opts, args) then
             -- log_info("matched route: ", require("cjson").encode(route))
             -- log_info("matched path: ", path)
@@ -663,8 +650,6 @@ local function _match_from_routes(routes, path, opts, args)
                 return route
             end
         end
-
-        ::continue::
     end
 
     return nil

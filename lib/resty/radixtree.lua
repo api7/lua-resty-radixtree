@@ -459,6 +459,10 @@ local function compare_param(req_path, route, opts)
 
     local pat, names = fetch_pat(route.path_org)
     log_info("pcre pat: ", pat)
+    if #names == 0 then
+        return true
+    end
+
     local m = re_match(req_path, pat, "jo")
     if not m then
         return false

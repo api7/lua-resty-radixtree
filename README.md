@@ -180,7 +180,7 @@ local rx = radix.new({
 `syntax: metadata = rx:match(path, opts)`
 
 * `path`: client request path.
-* `opts`: a Lua tale (optional).
+* `opts`: a Lua table (optional).
   * `method`: optional, method name of client request.
   * `host`: optional, client request host.
   * `remote_addr`: optional, client remote address like `192.168.1.100`.
@@ -200,7 +200,7 @@ local metadata = rx:match(ngx.var.uri, {...})
 `syntax: ok = rx:dispatch(path, opts, ...)`
 
 * `path`: client request path.
-* `opts`: a Lua tale (optional).
+* `opts`: a Lua table (optional).
   * `method`: optional, method name of client request.
   * `host`: optional, client request host.
   * `remote_addr`: optional, client remote address like `192.168.1.100`.

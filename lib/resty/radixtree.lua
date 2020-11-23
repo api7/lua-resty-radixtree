@@ -504,7 +504,17 @@ local compare_funcs = {
                 return false
             end
         end
-        return l_v == r_v
+        if type(l_v) == "table" then
+            for _, v in ipairs(l_v) do
+                if v == r_v then
+                    return true
+                end
+            end
+
+            return false
+        else
+            return l_v == r_v
+        end
     end,
     ["~="] = function (l_v, r_v)
         return l_v ~= r_v

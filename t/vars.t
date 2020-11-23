@@ -533,3 +533,36 @@ metadata /aa
 nil
 nil
 nil
+
+
+
+=== TEST 19: ==: left value is array table
+--- config
+    location /t {
+        content_by_lua_block {
+            local radix = require("resty.radixtree")
+            local rx = radix.new({
+                {
+                    paths = "/aa",
+                    metadata = "metadata /aa",
+                    vars = {
+                        {"x", "==", "a"},
+                    },
+                }
+            })
+
+            ngx.say(rx:match("/aa", {vars = {x = {'a', 'b'}}}))
+            ngx.say(rx:match("/aa", {vars = {x = {'a'}}}))
+            ngx.say(rx:match("/aa", {vars = {x = {'b'}}}))
+            ngx.say(rx:match("/aa", {vars = {x = {}}}))
+        }
+    }
+--- request
+GET /t
+--- no_error_log
+[error]
+--- response_body
+metadata /aa
+metadata /aa
+nil
+nil

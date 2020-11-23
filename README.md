@@ -172,6 +172,7 @@ local rx = radix.new({
 |<       |less than  |{"arg_age", "<", 24}|
 |~~      |Regular match|{"arg_name", "~~", "[a-z]+"}|
 |in      |find in array|{"arg_name", "in", {"1","2"}}|
+|has     |left value array has value in the right |{"graphql_root_fields", "has", "repo"}|
 
 [Back to TOC](#table-of-contents)
 

@@ -496,6 +496,20 @@ local function in_array(l_v, r_v)
     return false
 end
 
+local function has_element(l_v, r_v)
+    if type(l_v) == "table" then
+        for _, v in ipairs(l_v) do
+            if v == r_v then
+                return true
+            end
+        end
+
+        return false
+    end
+
+    return false
+end
+
 local compare_funcs = {
     ["=="] = function (l_v, r_v)
         if type(r_v) == "number" then
@@ -534,6 +548,7 @@ local compare_funcs = {
     end,
     ["IN"] = in_array,
     ["in"] = in_array,
+    ["has"] = has_element,
 }
 
 

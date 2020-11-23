@@ -11,7 +11,7 @@ __DATA__
 --- config
     location /t {
         content_by_lua_block {
-            local json = require("ljson")
+            local json = require("toolkit.json")
             local radix = require("resty.radixtree")
             local rx = radix.new({
                 {
@@ -46,7 +46,7 @@ matched: {"_path":"/name/*name","name":""}
 --- config
     location /t {
         content_by_lua_block {
-            local json = require("ljson")
+            local json = require("toolkit.json")
             local radix = require("resty.radixtree")
             local rx = radix.new({
                 {
@@ -81,7 +81,7 @@ matched: {":ext":"","_path":"/name/*"}
 --- config
     location /t {
         content_by_lua_block {
-            local json = require("ljson")
+            local json = require("toolkit.json")
             local radix = require("resty.radixtree")
             local rx = radix.new({
                 {
@@ -117,7 +117,7 @@ matched: []
 --- config
     location /t {
         content_by_lua_block {
-            local json = require("ljson")
+            local json = require("toolkit.json")
             local radix = require("resty.radixtree")
             local rx = radix.new({
                 {
@@ -146,7 +146,7 @@ matched: {"_path":"/name/:name/id/:id/*other","id":"1","name":"json","other":"fo
 --- config
     location /t {
         content_by_lua_block {
-            local json = require("ljson")
+            local json = require("toolkit.json")
             local radix = require("resty.radixtree")
             local rx = radix.new({
                 {
@@ -175,7 +175,7 @@ matched: []
 --- config
     location /t {
         content_by_lua_block {
-            local json = require("ljson")
+            local json = require("toolkit.json")
             local radix = require("resty.radixtree")
             local rx = radix.new({
                 {
@@ -210,7 +210,7 @@ matched: []
 --- config
     location /t {
         content_by_lua_block {
-            local json = require("ljson")
+            local json = require("toolkit.json")
             local radix = require("resty.radixtree")
             local rx = radix.new({
                 {
@@ -242,7 +242,7 @@ pcre pat:
 --- config
     location /t {
         content_by_lua_block {
-            local json = require("ljson")
+            local json = require("toolkit.json")
             local radix = require("resty.radixtree")
             local rx = radix.new({
                 {

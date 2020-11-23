@@ -36,7 +36,7 @@ metadata prefix matching with GET, matched = {}
 --- config
     location /t {
         content_by_lua_block {
-            local json = require("cjson.safe")
+            local json = require("toolkit.json")
             local radix = require("resty.radixtree")
             local rx = radix.new({
                 {
@@ -62,7 +62,7 @@ metadata prefix matching with host, matched = {}
 --- config
     location /t {
         content_by_lua_block {
-            local json = require("cjson.safe")
+            local json = require("toolkit.json")
             local radix = require("resty.radixtree")
             local rx = radix.new({
                 {
@@ -90,7 +90,7 @@ metadata prefix matching with host, matched = {}
 --- config
     location /t {
         content_by_lua_block {
-            local json = require("cjson.safe")
+            local json = require("toolkit.json")
             local radix = require("resty.radixtree")
             local rx = radix.new({
                 {
@@ -125,7 +125,7 @@ metadata prefix matching with method, host, vars, matched = {}
 --- config
     location /t {
         content_by_lua_block {
-            local json = require("cjson.safe")
+            local json = require("toolkit.json")
             local radix = require("resty.radixtree")
             local rx = radix.new({
                 {
@@ -154,4 +154,4 @@ GET /t?k=v
 --- no_error_log
 [error]
 --- response_body
-after dispatch success get matched: {"_path":"\/hello*","_method":"GET","_host":"foo.com"}
+after dispatch success get matched: {"_host":"foo.com","_method":"GET","_path":"/hello*"}

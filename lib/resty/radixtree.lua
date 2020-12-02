@@ -22,6 +22,7 @@ local ipmatcher   = require("resty.ipmatcher")
 local base        = require("resty.core.base")
 local clone_tab   = require("table.clone")
 local lrucache    = require("resty.lrucache")
+local expr        = require("resty.expr.v1")
 local bit         = require("bit")
 local ngx         = ngx
 local table       = table
@@ -163,6 +164,7 @@ end
 
     local ngx_log = ngx.log
     local ngx_INFO = ngx.INFO
+    local ngx_ERR = ngx.ERR
 local function log_info(...)
     if cur_level and ngx_INFO > cur_level then
         return
@@ -171,6 +173,13 @@ local function log_info(...)
     return ngx_log(ngx_INFO, ...)
 end
 
+local function log_err(...)
+    if cur_level and ngx_ERR > cur_level then
+        return
+    end
+
+    return ngx_log(ngx_ERR, ...)
+end
 
 local mt = { __index = _M, __gc = gc_free }
 
@@ -256,12 +265,6 @@ function pre_insert_route(self, path, route)
         error("missing argument metadata or handler", 2)
     end
 
-    if route.vars then
-        if type(route.vars) ~= "table" then
-            error("invalid argument vars", 2)
-        end
-    end
-
     local method  = route.methods
     local bit_methods
     if type(method) ~= "table" then
@@ -275,6 +278,18 @@ function pre_insert_route(self, path, route)
     end
 
     clear_tab(route_opts)
+
+    if route.vars then
+        if type(route.vars) ~= "table" then
+            error("invalid argument vars", 2)
+        end
+
+        local route_expr, err = expr.new(route.vars)
+        if not route_expr then
+            error("failed to handle expression: " .. err, 2)
+        end
+        route_opts.vars = route_expr
+    end
 
     local hosts = route.hosts
     if type(hosts) == "table" and #hosts > 0 then
@@ -330,7 +345,6 @@ function pre_insert_route(self, path, route)
     route_opts.metadata = route.metadata
     route_opts.handler  = route.handler
     route_opts.method   = bit_methods
-    route_opts.vars     = route.vars
     route_opts.filter_fun   = route.filter_fun
     route_opts.priority = route.priority or 0
 
@@ -485,86 +499,6 @@ local function compare_param(req_path, route, opts)
     return true
 end
 
-local function in_array(l_v, r_v)
-    if type(r_v) == "table" then
-        for _,v in ipairs(r_v) do
-            if v == l_v then
-                return true
-            end
-        end
-    end
-    return false
-end
-
-local function has_element(l_v, r_v)
-    if type(l_v) == "table" then
-        for _, v in ipairs(l_v) do
-            if v == r_v then
-                return true
-            end
-        end
-
-        return false
-    end
-
-    return false
-end
-
-local compare_funcs = {
-    ["=="] = function (l_v, r_v)
-        if type(r_v) == "number" then
-            l_v = tonumber(l_v)
-            if not l_v then
-                return false
-            end
-        end
-        return l_v == r_v
-    end,
-    ["~="] = function (l_v, r_v)
-        return l_v ~= r_v
-    end,
-    [">"] = function (l_v, r_v)
-        l_v = tonumber(l_v)
-        r_v = tonumber(r_v)
-        if not l_v or not r_v then
-            return false
-        end
-        return l_v > r_v
-    end,
-    ["<"] = function (l_v, r_v)
-        l_v = tonumber(l_v)
-        r_v = tonumber(r_v)
-        if not l_v or not r_v then
-            return false
-        end
-        return l_v < r_v
-    end,
-    ["~~"] = function (l_v, r_v)
-        local from = re_find(l_v, r_v, "jo")
-        if from then
-            return true
-        end
-        return false
-    end,
-    ["IN"] = in_array,
-    ["in"] = in_array,
-    ["has"] = has_element,
-}
-
-
-local function compare_val(l_v, op, r_v, opts)
-    if r_v == ngx_null then
-        r_v = nil
-    end
-
-    local com_fun = compare_funcs[op or "=="]
-    if not com_fun then
-        return false
-    end
-    return com_fun(l_v, r_v, opts)
-end
-
-
 local function match_route_opts(route, opts, args)
     local method = opts.method
     local opts_matched_exists = (opts.matched ~= nil)
@@ -621,18 +555,13 @@ local function match_route_opts(route, opts, args)
     end
 
     if route.vars then
-        local vars = opts.vars or ngx_var
-        if type(vars) ~= "table" then
-            return false
-        end
-
-        for _, route_var in ipairs(route.vars) do
-            local l_v, op, r_v = route_var[1], route_var[2], route_var[3]
-            l_v = vars[l_v]
-
-            if not compare_val(l_v, op, r_v, opts) then
-                return false
+        local ok, err = route.vars:eval(opts.vars, opts)
+        if not ok then
+            if ok == nil then
+                log_err("failed to eval expression: ", err)
             end
+
+            return false
         end
     end
 

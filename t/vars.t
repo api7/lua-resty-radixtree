@@ -319,7 +319,7 @@ nil
     location /t {
         content_by_lua_block {
             local radix = require("resty.radixtree")
-            local rx = radix.new({
+            local ok, err = pcall(radix.new, {
                 {
                     paths = "/aa",
                     metadata = "metadata /aa",
@@ -329,15 +329,15 @@ nil
                 }
             })
 
-            ngx.say(rx:match("/aa", {vars = ngx.var}))
+            ngx.say(ok, " ", err)
         }
     }
 --- request
 GET /t?k=9
 --- no_error_log
 [error]
---- response_body
-nil
+--- response_body_like eval
+qr/failed to handle expression: invalid operator 'invalid'/
 
 
 

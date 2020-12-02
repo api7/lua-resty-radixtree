@@ -9,7 +9,6 @@
       - [Full path match](#full-path-match)
       - [Prefix match](#prefix-match)
       - [Parameters in path](#parameters-in-path)
-      - [Operator List](#operator-list)
     - [match](#match)
     - [dispatch](#dispatch)
   - [Install](#install)
@@ -99,7 +98,7 @@ The attributes of each element may contain these:
 |hosts      |option  |A list of client request host, not only supports normal domain name, but also supports wildcard name.|{"foo.com", "*.bar.com"}|
 |remote_addrs|option  |A list of client remote address(IPv4 and IPv6), and we can use CIDR format, eg `192.168.1.0/24`.|{"127.0.0.1", "192.0.0.0/8", "::1", "fe80::/32"}|
 |methods    |option  |A list of method name. Here is full valid method list: "GET", "POST", "PUT", "DELETE", "PATCH", "HEAD", "OPTIONS", "CONNECT" and "TRACE".|{"GET", "POST"}|
-|vars       |option  |A list of `{var, operator, val}`. For example: {{var, operator, val}, {var, operator, val}, ...}, `{"arg_name", "==", "json"}` means the value of argument `name` expect to `json`. Here is the full [Operator List](#operator-list).|{{"arg_name", "==", "json"}, {"arg_age", ">", 18}}|
+|vars       |option  |A DSL to evaluate with the given `opts.vars` or `ngx.var`. See https://github.com/api7/lua-resty-expr#new |{{"arg_name", "==", "json"}, {"arg_age", ">", 18}}|
 |filter_fun |option  |User defined filter function, We can use it to achieve matching logic for special scenes. `radixtree` will pass `vars` and other arguments when matching route.|function(vars) return vars["arg_name"] == "json" end|
 |priority      |option  |Routing priority, default is 0.|priority = 100|
 |metadata   |option  |Will return this field if using `rx:match` to match route.||
@@ -161,20 +160,6 @@ local rx = radix.new({
     },
 })
 ```
-
-#### Operator List
-
-|operator|description|example|
-|--------|-----------|-------|
-|==      |equal      |{"arg_name", "==", "json"}|
-|~=      |not equal  |{"arg_name", "~=", "json"}|
-|>       |greater than|{"arg_age", ">", 24}|
-|<       |less than  |{"arg_age", "<", 24}|
-|~~      |Regular match|{"arg_name", "~~", "[a-z]+"}|
-|in      |find in array|{"arg_name", "in", {"1","2"}}|
-|has     |left value array has value in the right |{"graphql_root_fields", "has", "repo"}|
-
-[Back to TOC](#table-of-contents)
 
 ### match
 

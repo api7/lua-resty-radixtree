@@ -1,4 +1,4 @@
-package = "lua-resty-radixtree-master"
+package = "lua-resty-radixtree"
 version = "2.5-0"
 source = {
     url = "git://github.com/api7/lua-resty-radixtree",

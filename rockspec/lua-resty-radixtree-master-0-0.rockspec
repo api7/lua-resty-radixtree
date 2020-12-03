@@ -14,6 +14,7 @@ description = {
 
 dependencies = {
     "lua-resty-ipmatcher",
+    "lua-resty-expr = 1.0.0",
 }
 
 build = {

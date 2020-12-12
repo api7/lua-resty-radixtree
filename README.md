@@ -24,7 +24,7 @@ This is Lua implementation library base on FFI for [rax](https://github.com/anti
 [![Build Status](https://travis-ci.org/iresty/lua-resty-radixtree.svg?branch=master)](https://travis-ci.org/iresty/lua-resty-radixtree)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://github.com/iresty/lua-resty-radixtree/blob/master/LICENSE)
 
-This project depends on [lua-resty-ipmatcher](https://github.com/iresty/lua-resty-ipmatcher).
+This project depends on [lua-resty-ipmatcher](https://github.com/api7/lua-resty-ipmatcher) and [lua-resty-expr](https://github.com/api7/lua-resty-expr).
 
 This project has been working in microservices API gateway [Apache APISIX](https://github.com/apache/incubator-apisix).
 
@@ -75,7 +75,7 @@ In addition to this open source version, our company also provides a more powerf
             matched = {}
         }
         ngx.say(rx:match("/name/json/foo/bar/gloo", opts))
-        ngx.say("name: ", opts.matched.name, " other:", opts.matched.other)
+        ngx.say("name: ", opts.matched.name, " other: ", opts.matched.other)
      }
  }
 ```

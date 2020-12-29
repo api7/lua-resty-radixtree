@@ -256,7 +256,7 @@ local pre_insert_route
 do
     local route_opts = {}
 
-function pre_insert_route(self, path, route)
+function pre_insert_route(self, path, route, global_opts)
     if type(path) ~= "string" then
         error("invalid argument path", 2)
     end
@@ -319,7 +319,7 @@ function pre_insert_route(self, path, route)
     route_opts.path_org = path
     route_opts.param = false
 
-    local pos = str_find(path, ':', 1, true)
+    local pos = not global_opts.no_param_match and str_find(path, ':', 1, true)
     if pos then
         path = path:sub(1, pos - 1)
         route_opts.path_op = "<="
@@ -361,9 +361,17 @@ end
 end -- do
 
 
-function _M.new(routes)
+local default_global_opts = {
+    no_param_match = false,
+}
+
+function _M.new(routes, opts)
     if not routes then
         return nil, "missing argument route"
+    end
+
+    if not opts then
+        opts = default_global_opts
     end
 
     local route_n = #routes
@@ -387,11 +395,11 @@ function _M.new(routes)
         local route = routes[i]
         local paths = route.paths
         if type(paths) == "string" then
-            pre_insert_route(self, paths, route)
+            pre_insert_route(self, paths, route, opts)
 
         else
             for _, path in ipairs(paths) do
-                pre_insert_route(self, path, route)
+                pre_insert_route(self, path, route, opts)
             end
         end
     end

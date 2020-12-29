@@ -86,7 +86,7 @@ In addition to this open source version, our company also provides a more powerf
 
 ### new
 
-`syntax: rx, err = radix.new(routes)`
+`syntax: rx, err = radix.new(routes, opts)`
 
 The routes is a array table, like `{ {...}, {...}, {...} }`, Each element in the array is a route, which is a hash table.
 
@@ -103,6 +103,11 @@ The attributes of each element may contain these:
 |priority      |option  |Routing priority, default is 0.|priority = 100|
 |metadata   |option  |Will return this field if using `rx:match` to match route.||
 |handler    |option  |Will call this function using `rx:dispatch` to match route.||
+
+The `opts` is an optional configuration controls the behavior of match. Fields below are supported:
+|name       |description|default|
+|:--------  |:-----------|:-----|
+|no_param_match|disable [Parameters in path](#parameters-in-path)|false|
 
 ### Path
 

@@ -276,3 +276,39 @@ match meta: metadata /:name/foo
 match meta: nil
 --- error_log
 pcre pat:
+
+
+
+=== TEST 9: disable param match
+--- config
+    location /t {
+        content_by_lua_block {
+            local json = require("toolkit.json")
+            local radix = require("resty.radixtree")
+            local rx = radix.new({
+                {
+                    paths = {"/name/:name/id/:id"},
+                    metadata = "metadata /name",
+                },
+            }, {
+                no_param_match = true,
+            })
+
+            local opts = {matched = {}}
+            local meta = rx:match("/name/json/id/1", opts)
+            ngx.say("match meta: ", meta)
+            ngx.say("matched: ", json.encode(opts.matched))
+            local meta = rx:match("/name/:name/id/:id", opts)
+            ngx.say("match meta: ", meta)
+            ngx.say("matched: ", json.encode(opts.matched))
+        }
+    }
+--- request
+GET /t
+--- no_error_log
+[error]
+--- response_body
+match meta: nil
+matched: []
+match meta: metadata /name
+matched: {"_path":"/name/:name/id/:id"}

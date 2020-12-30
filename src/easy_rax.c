@@ -72,7 +72,12 @@ radix_tree_find(void *t, const unsigned char *buf, size_t len)
         return NULL;
     }
 
-    return raxFind((rax *)t, (unsigned char *)buf, len);
+    void *res = raxFind((rax *)t, (unsigned char *)buf, len);
+    if (res == raxNotFound) {
+        return NULL;
+    }
+
+    return res;
 }
 
 
@@ -125,7 +130,7 @@ radix_tree_next(void *it, const unsigned char *buf, size_t len)
 
 
 int
-radix_tree_pre(void *it, const unsigned char *buf, size_t len)
+radix_tree_prev(void *it, const unsigned char *buf, size_t len)
 {
     raxIterator    *iter = it;
     int             res;

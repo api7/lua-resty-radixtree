@@ -125,7 +125,7 @@ radix_tree_next(void *it, const unsigned char *buf, size_t len)
 
 
 int
-radix_tree_pcre(void *it, const unsigned char *buf, size_t len)
+radix_tree_pre(void *it, const unsigned char *buf, size_t len)
 {
     raxIterator    *iter = it;
     int             res;

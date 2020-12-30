@@ -114,10 +114,12 @@ ffi_cdef[[
     void *radix_tree_find(void *t, const unsigned char *buf, size_t len);
     void *radix_tree_search(void *t, void *it, const unsigned char *buf,
         size_t len);
-    int radix_tree_pcre(void *it, const unsigned char *buf, size_t len);
+    int radix_tree_pre(void *it, const unsigned char *buf, size_t len);
     int radix_tree_stop(void *it);
 
     void *radix_tree_new_it(void *t);
+
+    extern void *raxNotFound;
 ]]
 
 
@@ -216,7 +218,7 @@ local function insert_route(self, opts)
     end
 
     local data_idx = radix.radix_tree_find(self.tree, path, #path)
-    if data_idx then
+    if data_idx ~= radix.raxNotFound then
         local idx = tonumber(ffi_cast('intptr_t', data_idx))
         local routes = self.match_data[idx]
         if routes and routes[1].path == path then
@@ -644,7 +646,7 @@ local function match_route(self, path, opts, args)
     end
 
     while true do
-        local idx = radix.radix_tree_pcre(it, path, #path)
+        local idx = radix.radix_tree_pre(it, path, #path)
         if idx <= 0 then
             break
         end

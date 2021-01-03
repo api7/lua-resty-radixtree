@@ -55,7 +55,7 @@ int radix_tree_insert(void *t, const unsigned char *buf, size_t len,
     int idx);
 void *radix_tree_find(void *t, const unsigned char *buf, size_t len);
 void *radix_tree_search(void *t, void *it, const unsigned char *buf, size_t len);
-int radix_tree_pcre(void *it, const unsigned char *buf, size_t len);
+int radix_tree_prev(void *it, const unsigned char *buf, size_t len);
 int radix_tree_next(void *it, const unsigned char *buf, size_t len);
 int radix_tree_stop(void *it);
 

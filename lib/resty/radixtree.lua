@@ -49,12 +49,11 @@ local newproxy    = newproxy
 local cur_level   = ngx.config.subsystem == "http" and
                     require("ngx.errlog").get_sys_filter_level()
 local ngx_var     = ngx.var
-local re_find     = ngx.re.find
 local re_match    = ngx.re.match
 local ngx_re      = require("ngx.re")
-local ngx_null    = ngx.null
 local empty_table = {}
 local str_find    = string.find
+local str_lower   = string.lower
 
 
 setmetatable(empty_table, {__newindex = function()
@@ -132,7 +131,7 @@ end
 local _M = { _VERSION = 1.7 }
 
 -- expose radix tree api for test
-_M._symbols = radix 
+_M._symbols = radix
 
 
 local function has_suffix(s, suffix)
@@ -304,13 +303,14 @@ function pre_insert_route(self, path, route, global_opts)
                 h = h:sub(2)
             end
 
+            h = str_lower(h)
             insert_tab(route_opts.hosts, is_wildcard)
             insert_tab(route_opts.hosts, h)
         end
 
     elseif type(hosts) == "string" then
         local is_wildcard = false
-        local host = hosts
+        local host = str_lower(hosts)
         if host:sub(1, 1) == '*' then
             is_wildcard = true
             host = host:sub(2)
@@ -624,6 +624,10 @@ end
 
 
 local function match_route(self, path, opts, args)
+    if opts.host then
+        opts.host = str_lower(opts.host)
+    end
+
     if opts.matched then
         clear_tab(opts.matched)
     end

@@ -190,3 +190,67 @@ nil
 metadata /aa
 metadata /aa
 metadata /aa
+
+
+
+=== TEST 7: hosts contains uppercase
+--- config
+    location /t {
+        content_by_lua_block {
+            local radix = require("resty.radixtree")
+            local rx = radix.new({
+                {
+                    paths = {"/aa*"},
+                    metadata = "metadata /aa",
+                    hosts = {"foo.cOm"},
+                }
+            })
+
+            ngx.say(rx:match("/aa/bb", {host = "foo.com"}))
+            ngx.say(rx:match("/aa/bb", {host = "www.foo.com"}))
+
+            local opts = {host = "foo.com", matched = {}}
+            rx:match("/aa/bb", opts)
+            ngx.say("matched: ", opts.matched._host)
+        }
+    }
+--- request
+GET /t
+--- no_error_log
+[error]
+--- response_body
+metadata /aa
+nil
+matched: foo.com
+
+
+
+=== TEST 8: opt.host contains uppercase
+--- config
+    location /t {
+        content_by_lua_block {
+            local radix = require("resty.radixtree")
+            local rx = radix.new({
+                {
+                    paths = {"/aa*"},
+                    metadata = "metadata /aa",
+                    hosts = {"foo.com"},
+                }
+            })
+
+            ngx.say(rx:match("/aa/bb", {host = "foo.com"}))
+            ngx.say(rx:match("/aa/bb", {host = "www.foo.com"}))
+
+            local opts = {host = "foo.cOm", matched = {}}
+            rx:match("/aa/bb", opts)
+            ngx.say("matched: ", opts.matched._host)
+        }
+    }
+--- request
+GET /t
+--- no_error_log
+[error]
+--- response_body
+metadata /aa
+nil
+matched: foo.com

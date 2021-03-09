@@ -1,8 +1,8 @@
-package = "lua-resty-radixtree-master"
-version = "0-0"
+package = "lua-resty-radixtree"
+version = "2.7.0-0"
 source = {
-    url = "git://github.com/iresty/lua-resty-radixtree",
-    branch = "master",
+    url = "git://github.com/api7/lua-resty-radixtree",
+    branch = "v2.7.0",
 }
 
 description = {

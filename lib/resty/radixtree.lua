@@ -461,8 +461,7 @@ local function fetch_pat(path)
         if first_byte == string.byte(":") then
             table.insert(names, res[i]:sub(2))
             -- See https://www.rfc-editor.org/rfc/rfc1738.txt BNF for specific URL schemes
-            -- exclude special [":", "*"]
-            res[i] = [=[([\w\-_,!';@&=\%\.\$\(\)\+]+)]=]
+            res[i] = [=[([\w\-_;:@&=!',\%\$\.\+\*\(\)]+)]=]
 
         elseif first_byte == string.byte("*") then
             local name = res[i]:sub(2)

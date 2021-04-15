@@ -327,8 +327,8 @@ matched: {"_path":"/name/:name/id/:id"}
             })
 
             local opts = {matched = {}}
-            -- test [";" | "@" | "&" | "="]
-            local meta = rx:match("/file/123&45@ddd=test;", opts)
+            -- test [";" | ":" | "@" | "&" | "="]
+            local meta = rx:match("/file/123&45@dd:d=test;", opts)
             ngx.say("matched: ", json.encode(opts.matched))
             ngx.say("match meta: ", meta)
 
@@ -337,8 +337,8 @@ matched: {"_path":"/name/:name/id/:id"}
             ngx.say("matched: ", json.encode(opts.matched))
             ngx.say("match meta: ", meta)
 
-            -- test uchar.unreserved.extra ["!" | "'" | "(" | ")" | ","]
-            local meta = rx:match("/file/t!es't,(file)", opts)
+            -- test uchar.unreserved.extra ["!" | "*" | "'" | "(" | ")" | ","]
+            local meta = rx:match("/file/t!e*s't,(file)", opts)
             ngx.say("matched: ", json.encode(opts.matched))
             ngx.say("match meta: ", meta)
         }
@@ -348,9 +348,9 @@ GET /t
 --- no_error_log
 [error]
 --- response_body
-matched: {"_path":"/file/:filename","filename":"123&45@ddd=test;"}
+matched: {"_path":"/file/:filename","filename":"123&45@dd:d=test;"}
 match meta: metadata /file/:filename
 matched: {"_path":"/file/:filename","filename":"test_a-b+c.lua$"}
 match meta: metadata /file/:filename
-matched: {"_path":"/file/:filename","filename":"t!es't,(file)"}
+matched: {"_path":"/file/:filename","filename":"t!e*s't,(file)"}
 match meta: metadata /file/:filename

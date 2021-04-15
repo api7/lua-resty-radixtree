@@ -312,3 +312,47 @@ match meta: nil
 matched: []
 match meta: metadata /name
 matched: {"_path":"/name/:name/id/:id"}
+
+
+
+=== TEST 10: /file/:filename (parameter with special symbol)
+--- config
+    location /t {
+        content_by_lua_block {
+            local json = require("toolkit.json")
+            local radix = require("resty.radixtree")
+            local rx = radix.new({
+                {
+                    paths = {"/file/:filename"},
+                    metadata = "metadata /file/:filename",
+                },
+            })
+
+            local opts = {matched = {}}
+            -- test [";" | ":" | "@" | "&" | "="]
+            local meta = rx:match("/file/123&45@dd:d=test;", opts)
+            ngx.say("matched: ", json.encode(opts.matched))
+            ngx.say("match meta: ", meta)
+
+            -- test uchar.unreserved.safe ["$" | "-" | "_" | "." | "+"]
+            local meta = rx:match("/file/test_a-b+c.lua$", opts)
+            ngx.say("matched: ", json.encode(opts.matched))
+            ngx.say("match meta: ", meta)
+
+            -- test uchar.unreserved.extra ["!" | "*" | "'" | "(" | ")" | ","]
+            local meta = rx:match("/file/t!e*s't,(file)", opts)
+            ngx.say("matched: ", json.encode(opts.matched))
+            ngx.say("match meta: ", meta)
+        }
+    }
+--- request
+GET /t
+--- no_error_log
+[error]
+--- response_body
+matched: {"_path":"/file/:filename","filename":"123&45@dd:d=test;"}
+match meta: metadata /file/:filename
+matched: {"_path":"/file/:filename","filename":"test_a-b+c.lua$"}
+match meta: metadata /file/:filename
+matched: {"_path":"/file/:filename","filename":"t!e*s't,(file)"}
+match meta: metadata /file/:filename

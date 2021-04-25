@@ -1,8 +1,8 @@
 package = "lua-resty-radixtree-master"
-version = "0-0"
+version = "2.8.0-0"
 source = {
     url = "git://github.com/iresty/lua-resty-radixtree",
-    branch = "master",
+    branch = "v2.8.0",
 }
 
 description = {
@@ -35,3 +35,4 @@ build = {
             INST_CONFDIR="$(CONFDIR)",
         },
 }
+

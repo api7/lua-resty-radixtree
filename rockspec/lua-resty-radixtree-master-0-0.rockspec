@@ -9,7 +9,6 @@ description = {
     summary = "Adaptive Radix Trees implemented in Lua for Nginx + Lua",
     homepage = "https://github.com/api7/lua-resty-radixtree",
     license = "Apache License 2.0",
-    maintainer = "Yuansheng Wang <membphis@gmail.com>"
 }
 
 dependencies = {

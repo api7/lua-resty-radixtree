@@ -155,3 +155,51 @@ GET /t?k=v
 [error]
 --- response_body
 after dispatch success get matched: {"_host":"foo.com","_method":"GET","_path":"/hello*"}
+
+
+
+=== TEST 6: match uri with '\n'
+--- config
+    location /t {
+        content_by_lua_block {
+            local radix = require("resty.radixtree")
+            local rx = radix.new({
+                {
+                    paths = "*",
+                    metadata = "OK",
+                },
+            })
+            local opts = {method = "GET", matched = {}}
+            ngx.say(rx:match("/ip\nA", opts))
+        }
+    }
+--- request
+GET /t
+--- no_error_log
+[error]
+--- response_body
+OK
+
+
+
+=== TEST 7: match uri with multiple '\n'
+--- config
+    location /t {
+        content_by_lua_block {
+            local radix = require("resty.radixtree")
+            local rx = radix.new({
+                {
+                    paths = "*",
+                    metadata = "OK",
+                },
+            })
+            local opts = {method = "GET", matched = {}}
+            ngx.say(rx:match("/ip\ni\ni", opts))
+        }
+    }
+--- request
+GET /t
+--- no_error_log
+[error]
+--- response_body
+OK

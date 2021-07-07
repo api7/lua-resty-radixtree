@@ -469,7 +469,8 @@ local function fetch_pat(path)
                 name = ":ext"
             end
             table.insert(names, name)
-            res[i] = [=[(.*)]=]
+            -- '.' matches any character except newline
+            res[i] = [=[((.|\n)*)]=]
         end
     end
 

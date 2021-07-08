@@ -54,4 +54,6 @@ dkms.conf
 #
 t/servroot
 .*
+!.github/
+!.travis.yml
 deps

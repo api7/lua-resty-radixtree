@@ -207,6 +207,7 @@ matched: []
 
 
 === TEST 7: /name/:name/foo (no cached parameter)
+--- log_level: debug
 --- config
     location /t {
         content_by_lua_block {
@@ -239,6 +240,7 @@ pcre pat:
 
 
 === TEST 8: /:name/foo
+--- log_level: debug
 --- config
     location /t {
         content_by_lua_block {

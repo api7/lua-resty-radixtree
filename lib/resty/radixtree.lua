@@ -165,8 +165,17 @@ end
 
 
     local ngx_log = ngx.log
+    local ngx_DEBUG = ngx.DEBUG
     local ngx_INFO = ngx.INFO
     local ngx_ERR = ngx.ERR
+local function log_debug(...)
+    if cur_level and ngx_DEBUG > cur_level then
+        return
+    end
+
+    return ngx_log(ngx_DEBUG, ...)
+end
+
 local function log_info(...)
     if cur_level and ngx_INFO > cur_level then
         return
@@ -485,7 +494,7 @@ local function compare_param(req_path, route, opts)
     end
 
     local pat, names = fetch_pat(route.path_org)
-    log_info("pcre pat: ", pat)
+    log_debug("pcre pat: ", pat)
     if #names == 0 then
         return true
     end
@@ -561,7 +570,6 @@ local function match_route_opts(route, opts, args)
             end
         end
 
-        log_info("hosts match: ", matched)
         if not matched then
             return false
         end

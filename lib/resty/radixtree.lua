@@ -703,8 +703,23 @@ function _M.dispatch(self, path, opts, ...)
             self.args = {...}
         else
             clear_tab(self.args)
-            for i = 1, len do
-                self.args[i] = select(i, ...)
+            self.args[1] = select(1, ...)
+            if len > 1 then
+                self.args[2] = select(2, ...)
+            end
+            if len > 2 then
+                self.args[3] = select(3, ...)
+            end
+            if len > 3 then
+                self.args[4] = select(4, ...)
+            end
+            if len > 4 then
+                self.args[5] = select(5, ...)
+            end
+            if len > 5 then
+                for i = 6, len do
+                   self.args[i] = select(i, ...)
+                end
             end
         end
 

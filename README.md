@@ -88,7 +88,7 @@ In addition to this open source version, our company also provides a more powerf
 
 `syntax: rx, err = radix.new(routes, opts)`
 
-The routes is a array table, like `{ {...}, {...}, {...} }`, Each element in the array is a route, which is a hash table.
+The routes is an array table, like `{ {...}, {...}, {...} }`, Each element in the array is a route, which is a hash table.
 
 The attributes of each element may contain these:
 
@@ -176,9 +176,9 @@ local rx = radix.new({
   * `host`: optional, client request host.
   * `remote_addr`: optional, client remote address like `192.168.1.100`.
   * `paths`: optional, a list of client request path.
-  * `vars`: optional, a Lua table to fetch variable, default value is `ngx.var` to fetch Ningx builtin variable.
+  * `vars`: optional, a Lua table to fetch variable, default value is `ngx.var` to fetch Nginx builtin variable.
 
-Matchs the route by `method`, `path` and `host` etc, and return `metadata` if successful.
+Matches the route by `method`, `path` and `host` etc, and return `metadata` if successful.
 
 ```lua
 local metadata = rx:match(ngx.var.uri, {...})
@@ -197,7 +197,7 @@ local metadata = rx:match(ngx.var.uri, {...})
   * `remote_addr`: optional, client remote address like `192.168.1.100`.
   * `vars`: optional, a Lua table to fetch variable, default value is `ngx.var` to fetch Nginx builtin variable.
 
-Matchs the route by `method`, `path` and `host` etc, and call `handler` function if successful.
+Matches the route by `method`, `path` and `host` etc, and call `handler` function if successful.
 
 ```lua
 local ok = rx:dispatch(ngx.var.uri, {...})

@@ -358,3 +358,37 @@ matched: {"_path":"/file/:filename","filename":"test_a-b+c.lua$"}
 match meta: metadata /file/:filename
 matched: {"_path":"/file/:filename","filename":"t!e*s't,(file)"}
 match meta: metadata /file/:filename
+
+
+
+=== TEST 11: no opts option should work fine
+--- config
+    location /t {
+        content_by_lua_block {
+            local json = require("toolkit.json")
+            local radix = require("resty.radixtree")
+            local rx = radix.new({
+                {
+                    paths = {"/user/:user/age/:age"},
+                    metadata = "/user/:user/age/:age",
+                },
+                {
+                    paths = {"/user/:user"},
+                    metadata = "/user/:user",
+                }
+            })
+
+            local meta_a = rx:match("/user/foo")
+            ngx.say("match meta: ", meta_a)
+
+            local meta_b = rx:match("/user/foo/age/26")
+            ngx.say("match meta: ", meta_b)
+        }
+    }
+--- request
+GET /t
+--- no_error_log
+[error]
+--- response_body
+match meta: /user/:user
+match meta: /user/:user/age/:age

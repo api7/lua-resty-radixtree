@@ -19,8 +19,9 @@ jobs:
           submodules: recursive
 
       - name: Linux Get dependencies
-        run: sudo apt install -y cpanminus build-essential libncurses5-dev libreadline-dev libssl-dev perl luarocks
-
+        run: |
+          sudo apt install -y cpanminus build-essential libncurses5-dev libreadline-dev libssl-dev perl lua5.1 liblua5.1-0-dev
+          curl -fsSL https://raw.githubusercontent.com/apache/apisix/master/utils/linux-install-luarocks.sh | sh
       - name: Linux Before install
         run: |
           sudo cpanm --notest Test::Nginx > build.log 2>&1 || (cat build.log && exit 1)

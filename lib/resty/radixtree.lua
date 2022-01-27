@@ -424,7 +424,7 @@ function _M.free(self)
     local it = self.tree_it
     if it then
         radix.radix_tree_stop(it)
-        ffi.C.free(it)
+        C.free(it)
         self.tree_it = nil
     end
 

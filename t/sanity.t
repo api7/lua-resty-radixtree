@@ -344,8 +344,45 @@ nil
 nil
 
 
+=== TEST 10: method: PURGE
+--- config
+    location /t {
+        content_by_lua_block {
+            local radix = require("resty.radixtree")
+            local rx = radix.new({
+                {
+                    paths = {"/aa"},
+                    methods = {"PURGE"},
+                    metadata = "metadata /aa",
+                },
+                {
+                    paths = {"/aa*"},
+                    methods = {"PUT"},
+                    metadata = "metadata /aa*",
+                }
+            })
 
-=== TEST 10: Iterator
+            ngx.say(rx:match("/aa", {method = "PURGE"}))
+            ngx.say(rx:match("/aa/bb", {method = "PURGE"}))
+
+
+            ngx.say(rx:match("/aa", {method = "GET"}))
+            ngx.say(rx:match("/aa/bb", {method = "GET"}))
+        }
+    }
+--- request
+GET /t
+--- no_error_log
+[error]
+--- response_body
+metadata /aa
+nil
+nil
+nil
+
+
+
+=== TEST 11: Iterator
 --- config
     location /t {
         content_by_lua_block {

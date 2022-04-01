@@ -122,7 +122,7 @@ ffi_cdef[[
 
 local METHODS = {}
 for i, name in ipairs({"GET", "POST", "PUT", "DELETE", "PATCH", "HEAD",
-                       "OPTIONS", "CONNECT", "TRACE"}) do
+                       "OPTIONS", "CONNECT", "TRACE", "PURGE"}) do
     METHODS[name] = bit.lshift(1, i - 1)
     -- ngx.log(ngx.WARN, "name: ", name, " val: ", METHODS[name])
 end

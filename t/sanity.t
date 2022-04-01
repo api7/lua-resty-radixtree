@@ -344,7 +344,7 @@ nil
 nil
 
 
-=== TEST 9: method: PURGE
+=== TEST 10: method: PURGE
 --- config
     location /t {
         content_by_lua_block {

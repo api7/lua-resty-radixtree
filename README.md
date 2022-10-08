@@ -28,7 +28,7 @@ This project depends on [lua-resty-ipmatcher](https://github.com/api7/lua-resty-
 
 This project has been working in microservices API gateway [Apache APISIX](https://github.com/apache/incubator-apisix).
 
-The project is open sourced by [Shenzhen ZhiLiu](https://www.apiseven.com/) Technology Co., Ltd.
+The project is open sourced by [API7.ai](https://api7.ai/) Inc.
 
 In addition to this open source version, our company also provides a more powerful and performing commercial version, and provides technical support. If you are interested in our commercial version, please [contact us](https://www.apiseven.com/).
 

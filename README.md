@@ -21,7 +21,7 @@
 
 This is Lua implementation library base on FFI for [rax](https://github.com/antirez/rax).
 
-[![Build Status](https://travis-ci.org/iresty/lua-resty-radixtree.svg?branch=master)](https://travis-ci.org/iresty/lua-resty-radixtree)
+[![Build Status](https://github.com/api7/lua-resty-radixtree/actions/workflows/test.yml/badge.svg)](https://github.com/api7/lua-resty-radixtree/actions/workflows/test.yml)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://github.com/iresty/lua-resty-radixtree/blob/master/LICENSE)
 
 This project depends on [lua-resty-ipmatcher](https://github.com/api7/lua-resty-ipmatcher) and [lua-resty-expr](https://github.com/api7/lua-resty-expr).

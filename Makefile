@@ -37,13 +37,13 @@ test: compile
 ### clean:        Remove generated files
 .PHONY: clean
 clean:
-	rm -f $(C_SO_NAME) $(OBJS) ${R3_CONGIGURE}
+	rm -f $(C_SO_NAME) $(OBJS)
 
 
 ### compile:      Compile library
 .PHONY: compile
 
-compile: ${R3_FOLDER} ${R3_CONGIGURE} ${R3_STATIC_LIB} $(C_SO_NAME)
+compile: $(C_SO_NAME)
 
 ${OBJS} : %.o : %.c
 	$(CC) $(MY_CFLAGS) -c $< -o $@

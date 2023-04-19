@@ -31,6 +31,19 @@ radix_tree_new()
     return (void *)raxNew();
 }
 
+int
+radix_tree_remove(void *t, unsigned char *buf, size_t len)
+{
+    if (t == NULL) {
+        return -1;
+    }
+
+    if (buf == NULL) {
+        return -2;
+    }
+
+    return raxRemove((rax *)t, (unsigned char *)buf, len, NULL);
+}
 
 int
 radix_tree_destroy(void *t)

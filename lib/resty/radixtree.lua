@@ -110,6 +110,7 @@ ffi_cdef[[
     int radix_tree_destroy(void *t);
     int radix_tree_insert(void *t, const unsigned char *buf, size_t len,
         int idx);
+    int radix_tree_remove(void *t, const unsigned char *buf, size_t len);
     void *radix_tree_find(void *t, const unsigned char *buf, size_t len);
     void *radix_tree_search(void *t, void *it, const unsigned char *buf,
         size_t len);
@@ -194,6 +195,35 @@ end
 
 local mt = { __index = _M, __gc = gc_free }
 
+local function inside_modify_route(tab, val)
+    local idx = -1
+    for i, elem in ipairs(tab) do
+        if elem.id == val.id then
+            idx = i
+            break
+        end
+    end
+
+    if idx == -1 then
+        log_err("modified route does not exist.", val.id)
+        return
+    end
+
+    tab[idx] = val
+    return
+end
+
+local function remove_tab(tab, val)
+    for i, elem in ipairs(tab) do
+        if elem.id == val.id then
+            table.remove(tab, i)
+            return
+        end
+    end
+
+    log_err("removed route does not exist.", val.id)
+    return
+end
 
 local function sort_route(route_a, route_b)
     return (route_a.priority or 0) > (route_b.priority or 0)
@@ -208,6 +238,119 @@ local function insert_tab_in_order(tab, val, func)
         end
     end
     insert_tab(tab, val)
+end
+
+local function modify_route(self, opts)
+    local path = opts.path
+    opts = clone_tab(opts)
+
+    if not self.disable_path_cache_opt and opts.path_op == '=' then
+        local route_arr = self.hash_path[path]
+        if route_arr == nil or type(route_arr) ~= "table" then
+            log_err("no route array exists or route array is not a table in hash_path.", path, opts.id)
+            return false
+        end
+        
+        local idx = -1
+        for i, route in ipairs(route_arr) do
+            if route.id == opts.id then
+                idx = i
+                break
+            end
+        end
+
+        if idx == -1 then
+            log_err("cannot find route in hash_path.", path, opts.id)
+            return false
+        end
+
+        route_arr[idx] = opts
+        return true
+    end
+
+    local data_idx = radix.radix_tree_find(self.tree, path, #path)
+    if data_idx == nil then
+        log_err("cannot find the index in radixtree" .. path)
+        return false
+    end
+
+    local idx = tonumber(ffi_cast('intptr_t', data_idx))
+    local routes = self.match_data[idx]
+    if routes == nil or routes[1].path ~= path then
+        log_err("no routes array or path not the same.")
+        return false
+    end
+
+    local err = inside_modify_route(routes, opts)
+    if err ~= nil then
+        log_err("modify route failed.", err, opts.id)
+        return false
+    end
+
+    return true
+end
+
+local function remove_route(self, opts)
+    local path = opts.path
+    opts = clone_tab(opts)
+    
+    if not self.disable_path_cache_opt and opts.path_op == '=' then
+        local route_arr = self.hash_path[path]
+        if route_arr == nil or type(route_arr) ~= "table" then
+            log_err("no route array exists in hash_path.", path, opts.id)
+            return false
+        end
+
+        local idx = -1
+        for i, route in ipairs(route_arr) do
+            if route.id == opts.id then
+                idx = i
+                break
+            end
+        end
+
+        if idx == -1 then
+            log_err("cannot find route in hash_path.", path, opts.id)
+            return false
+        end
+
+        table.remove(route_arr, idx)
+
+        return true
+    end
+
+    local data_idx = radix.radix_tree_find(self.tree, path, #path)
+    if data_idx == nil then
+        log_err("cannot find the index in radixtree" .. path)
+        return false
+    end
+
+    local idx = tonumber(ffi_cast('intptr_t', data_idx))
+    local routes = self.match_data[idx]
+    if routes == nil or routes[1].path ~= path then
+        log_err("different path in routes array at the node of radixtree.", opts.id)
+        return false
+    end
+
+    if #routes == 1  then
+        if routes[1].id ~= opts.id then
+            log_err("no route to delete in routes array.", opts.id)
+            return false
+        end
+
+        self.match_data[idx] = nil
+
+        local rc = radix.radix_tree_remove(self.tree, path, #path)
+        local c = tonumber(ffi_cast('int', rc))
+        if c ~= 1 then
+            log_err("delete node in radixtree failed.", opts.id, path, c)
+            return false
+        end
+    elseif #routes > 1 then
+        remove_tab(routes, opts)
+    end
+
+    return true
 end
 
 local function insert_route(self, opts)
@@ -262,6 +405,212 @@ local function parse_remote_addr(route_remote_addrs)
     return ip_ins
 end
 
+local function pre_update_route(self, path, route, opts)
+    if type(path) ~= "string" then
+        error("invalid argument path", 2)
+    end
+
+    if type(route.metadata) == "nil" and type(route.handler) == "nil" then
+        error("missing argument metadata or handler", 2)
+    end
+
+    local method  = route.methods
+    local bit_methods
+    if type(method) ~= "table" then
+        bit_methods = method and METHODS[method] or 0
+
+    else
+        bit_methods = 0
+        for _, m in ipairs(method) do
+            bit_methods = bit.bor(bit_methods, METHODS[m])
+        end
+    end
+
+    local route_opts = {}
+    clear_tab(route_opts)
+
+    if route.vars then
+        if type(route.vars) ~= "table" then
+            error("invalid argument vars", 2)
+        end
+
+        local route_expr, err = expr.new(route.vars)
+        if not route_expr then
+            error("failed to handle expression: " .. err, 2)
+        end
+        route_opts.vars = route_expr
+    end
+
+    local hosts = route.hosts
+    if type(hosts) == "table" and #hosts > 0 then
+        route_opts.hosts = {}
+        for _, h in ipairs(hosts) do
+            local is_wildcard = false
+            if h and h:sub(1, 1) == '*' then
+                is_wildcard = true
+                h = h:sub(2)
+            end
+
+            h = str_lower(h)
+            insert_tab(route_opts.hosts, is_wildcard)
+            insert_tab(route_opts.hosts, h)
+        end
+
+    elseif type(hosts) == "string" then
+        local is_wildcard = false
+        local host = str_lower(hosts)
+        if host:sub(1, 1) == '*' then
+            is_wildcard = true
+            host = host:sub(2)
+        end
+
+        route_opts.hosts = {is_wildcard, host}
+    end
+
+    route_opts.path_org = path
+    route_opts.param = false
+
+    local pos = not opts.no_param_match and str_find(path, ':', 1, true)
+    if pos then
+        path = path:sub(1, pos - 1)
+        route_opts.path_op = "<="
+        route_opts.path = path
+        route_opts.param = true
+
+    else
+        pos = str_find(path, '*', 1, true)
+        if pos then
+            if pos ~= #path then
+                route_opts.param = true
+            end
+            path = path:sub(1, pos - 1)
+            route_opts.path_op = "<="
+        else
+            route_opts.path_op = "="
+        end
+        route_opts.path = path
+    end
+
+    log_info("path: ", route_opts.path, " operator: ", route_opts.path_op)
+
+    route_opts.metadata = route.metadata
+    route_opts.handler  = route.handler
+    route_opts.method   = bit_methods
+    route_opts.filter_fun   = route.filter_fun
+    route_opts.priority = route.priority or 0
+
+    local err
+    local remote_addrs = route.remote_addrs
+    route_opts.matcher_ins, err = parse_remote_addr(remote_addrs)
+    if err then
+        error("invalid IP address: " .. err, 2)
+    end
+
+    route_opts.id = route.id
+    modify_route(self, route_opts)
+end
+
+local function pre_delete_route(self, path, route, opts)
+    if type(path) ~= "string" then
+        error("invalid argument path", 2)
+    end
+
+    local route_opts = {}
+
+    local method  = route.methods
+    local bit_methods
+    if type(method) ~= "table" then
+        bit_methods = method and METHODS[method] or 0
+
+    else
+        bit_methods = 0
+        for _, m in ipairs(method) do
+            bit_methods = bit.bor(bit_methods, METHODS[m])
+        end
+    end
+
+    clear_tab(route_opts)
+
+    if route.vars then
+        if type(route.vars) ~= "table" then
+            error("invalid argument vars", 2)
+        end
+
+        local route_expr, err = expr.new(route.vars)
+        if not route_expr then
+            error("failed to handle expression: " .. err, 2)
+        end
+        route_opts.vars = route_expr
+    end
+
+    local hosts = route.hosts
+    if type(hosts) == "table" and #hosts > 0 then
+        route_opts.hosts = {}
+        for _, h in ipairs(hosts) do
+            local is_wildcard = false
+            if h and h:sub(1, 1) == '*' then
+                is_wildcard = true
+                h = h:sub(2)
+            end
+
+            h = str_lower(h)
+            insert_tab(route_opts.hosts, is_wildcard)
+            insert_tab(route_opts.hosts, h)
+        end
+
+    elseif type(hosts) == "string" then
+        local is_wildcard = false
+        local host = str_lower(hosts)
+        if host:sub(1, 1) == '*' then
+            is_wildcard = true
+            host = host:sub(2)
+        end
+
+        route_opts.hosts = {is_wildcard, host}
+    end
+
+    route_opts.path_org = path
+    route_opts.param = false
+
+    local pos = not opts.no_param_match and str_find(path, ':', 1, true)
+    if pos then
+        path = path:sub(1, pos - 1)
+        route_opts.path_op = "<="
+        route_opts.path = path
+        route_opts.param = true
+
+    else
+        pos = str_find(path, '*', 1, true)
+        if pos then
+            if pos ~= #path then
+                route_opts.param = true
+            end
+            path = path:sub(1, pos - 1)
+            route_opts.path_op = "<="
+        else
+            route_opts.path_op = "="
+        end
+        route_opts.path = path
+    end
+
+    log_info("path: ", route_opts.path, " operator: ", route_opts.path_op)
+
+    route_opts.metadata = route.metadata
+    route_opts.handler  = route.handler
+    route_opts.method   = bit_methods
+    route_opts.filter_fun   = route.filter_fun
+    route_opts.priority = route.priority or 0
+
+    local err
+    local remote_addrs = route.remote_addrs
+    route_opts.matcher_ins, err = parse_remote_addr(remote_addrs)
+    if err then
+        error("invalid IP address: " .. err, 2)
+    end
+
+    route_opts.id = route.id
+    remove_route(self, route_opts)
+end
 
 local pre_insert_route
 do
@@ -367,6 +716,7 @@ function pre_insert_route(self, path, route, global_opts)
         error("invalid IP address: " .. err, 2)
     end
 
+    route_opts.id = route.id
     insert_route(self, route_opts)
 end
 
@@ -683,6 +1033,98 @@ function _M.match(self, path, opts)
     return route.metadata
 end
 
+function _M.update_route(self, pre_r, r, opts)
+    if pre_r == nil or r == nil  then
+        return "illegal argument."
+    end
+
+    local pre_t = {}
+    local t = {}
+
+    if type(pre_r.paths) == "string" then
+        pre_t[pre_r.paths] = 1
+    else
+        for _, p in ipairs(pre_r.paths) do
+            pre_t[p] = 1
+        end
+    end
+
+    if type(r.paths) == "string" then
+        t[r.paths] = 1
+    else
+        for _, p in ipairs(r.paths) do
+            t[p] = 1
+        end
+    end
+
+    local common = {}
+    for k,v in pairs(pre_t) do
+        if t[k] ~= nil then
+            table.insert(common, k)
+        end
+    end
+
+    for _, p in ipairs(common) do
+        pre_update_route(self, p, r, opts)
+        
+        pre_t[p] = nil
+        t[p] = nil
+    end
+
+    for k,v in pairs(pre_t) do
+        pre_delete_route(self, k, pre_r, opts)
+    end
+
+    local opts = {
+        no_param_match = true
+    }
+
+    for k,v in pairs(t) do
+        pre_insert_route(self, k, r, opts)
+    end
+end
+
+function _M.delete_route(self, r, opts)
+    if r == nil then
+        return "illegal route"
+    end
+
+    local path_tb = {}
+    if type(r.paths) == "string" then
+        table.insert(path_tb, r.paths)
+    else
+        for _, j in ipairs(r.paths) do
+            table.insert(path_tb, j)
+        end
+    end
+
+    for _, p in ipairs(path_tb) do
+        pre_delete_route(self, p, r, opts)
+    end
+
+    return nil
+end
+
+function _M.add_route(self, route, opts)
+    if route == nil then
+        return "illegal route"
+    end
+
+    if not opts then
+        opts = default_global_opts
+    end
+
+    local paths = route.paths
+    if type(paths) == "string" then
+        pre_insert_route(self, paths, route, opts)
+    else
+        for _, path in ipairs(paths) do
+            pre_insert_route(self, path,route,opts)
+        end
+    end
+
+    return nil
+end
 
 function _M.dispatch(self, path, opts, ...)
     if type(path) ~= "string" then

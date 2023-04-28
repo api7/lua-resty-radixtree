@@ -54,6 +54,7 @@ local ngx_re      = require("ngx.re")
 local empty_table = {}
 local str_find    = string.find
 local str_lower   = string.lower
+local table_remove = table.remove
 
 
 setmetatable(empty_table, {__newindex = function()
@@ -195,24 +196,6 @@ end
 
 local mt = { __index = _M, __gc = gc_free }
 
-local function inside_modify_route(tab, val)
-    local idx = -1
-    for i, elem in ipairs(tab) do
-        if elem.id == val.id then
-            idx = i
-            break
-        end
-    end
-
-    if idx == -1 then
-        log_err("modified route does not exist.", val.id)
-        return
-    end
-
-    tab[idx] = val
-    return
-end
-
 local function remove_tab(tab, val)
     for i, elem in ipairs(tab) do
         if elem.id == val.id then
@@ -240,6 +223,35 @@ local function insert_tab_in_order(tab, val, func)
     insert_tab(tab, val)
 end
 
+local function update_tab_in_order(tab, val, func)
+    local idx = -1
+    for i, j in ipairs(tab) do
+        if func(val, j) then
+            move_tab(tab, i, #tab, i + 1)
+            tab[i] = val
+
+            if idx == -1 then
+                for x = i + 1, #tab do
+                    if tab[x].id == val.id then
+                        table_remove(tab, x)
+                        break
+                    end
+                end
+            else
+                table_remove(tab, idx)
+            end
+
+            return
+        end
+
+        if j.id == val.id then
+            idx = i
+        end
+    end
+    insert_tab(tab, val)
+    table_remove(tab, idx)
+end
+
 local function modify_route(self, opts)
     local path = opts.path
     opts = clone_tab(opts)
@@ -251,20 +263,8 @@ local function modify_route(self, opts)
             return false
         end
         
-        local idx = -1
-        for i, route in ipairs(route_arr) do
-            if route.id == opts.id then
-                idx = i
-                break
-            end
-        end
+        update_tab_in_order(route_arr, opts, sort_route)
 
-        if idx == -1 then
-            log_err("cannot find route in hash_path.", path, opts.id)
-            return false
-        end
-
-        route_arr[idx] = opts
         return true
     end
 
@@ -281,11 +281,7 @@ local function modify_route(self, opts)
         return false
     end
 
-    local err = inside_modify_route(routes, opts)
-    if err ~= nil then
-        log_err("modify route failed.", err, opts.id)
-        return false
-    end
+    update_tab_in_order(routes, opts, sort_route)
 
     return true
 end

@@ -54,7 +54,7 @@ local ngx_re      = require("ngx.re")
 local empty_table = {}
 local str_find    = string.find
 local str_lower   = string.lower
-local table_remove = table.remove
+local remove_tab  = table.remove
 
 
 setmetatable(empty_table, {__newindex = function()
@@ -124,7 +124,7 @@ ffi_cdef[[
 
 local METHODS = {}
 for i, name in ipairs({"GET", "POST", "PUT", "DELETE", "PATCH", "HEAD",
-                       "OPTIONS", "CONNECT", "TRACE", "PURGE"}) do
+                       "OPTIONS", "CONNECT", "TRACE"}) do
     METHODS[name] = bit.lshift(1, i - 1)
     -- ngx.log(ngx.WARN, "name: ", name, " val: ", METHODS[name])
 end
@@ -167,17 +167,8 @@ end
 
 
     local ngx_log = ngx.log
-    local ngx_DEBUG = ngx.DEBUG
     local ngx_INFO = ngx.INFO
     local ngx_ERR = ngx.ERR
-local function log_debug(...)
-    if cur_level and ngx_DEBUG > cur_level then
-        return
-    end
-
-    return ngx_log(ngx_DEBUG, ...)
-end
-
 local function log_info(...)
     if cur_level and ngx_INFO > cur_level then
         return
@@ -195,18 +186,6 @@ local function log_err(...)
 end
 
 local mt = { __index = _M, __gc = gc_free }
-
-local function remove_tab(tab, val)
-    for i, elem in ipairs(tab) do
-        if elem.id == val.id then
-            table.remove(tab, i)
-            return
-        end
-    end
-
-    log_err("removed route does not exist.", val.id)
-    return
-end
 
 local function sort_route(route_a, route_b)
     return (route_a.priority or 0) > (route_b.priority or 0)
@@ -233,12 +212,12 @@ local function update_tab_in_order(tab, val, func)
             if idx == -1 then
                 for x = i + 1, #tab do
                     if tab[x].id == val.id then
-                        table_remove(tab, x)
+                        remove_tab(tab, x)
                         break
                     end
                 end
             else
-                table_remove(tab, idx)
+                remove_tab(tab, idx)
             end
 
             return
@@ -249,7 +228,7 @@ local function update_tab_in_order(tab, val, func)
         end
     end
     insert_tab(tab, val)
-    table_remove(tab, idx)
+    remove_tab(tab, idx)
 end
 
 local function modify_route(self, opts)
@@ -264,7 +243,7 @@ local function modify_route(self, opts)
         end
         
         update_tab_in_order(route_arr, opts, sort_route)
-
+        
         return true
     end
 
@@ -282,7 +261,7 @@ local function modify_route(self, opts)
     end
 
     update_tab_in_order(routes, opts, sort_route)
-
+    
     return true
 end
 
@@ -343,7 +322,15 @@ local function remove_route(self, opts)
             return false
         end
     elseif #routes > 1 then
-        remove_tab(routes, opts)
+        for i, elem in ipairs(routes) do
+            if elem.id == opts.id then
+                table.remove(routes, i)
+                return
+            end
+        end
+    
+        log_err("removed route does not exist.", opts.id)
+        return
     end
 
     return true
@@ -378,8 +365,9 @@ local function insert_route(self, opts)
     self.match_data_index = self.match_data_index + 1
     self.match_data[self.match_data_index] = {opts}
 
+    log_info("insert route path: radix_tree_insert: ", path, opts.id, " dataprt: ", self.match_data_index)
     radix.radix_tree_insert(self.tree, path, #path, self.match_data_index)
-    log_info("insert route path: ", path, " dataprt: ", self.match_data_index)
+    
     return true
 end
 
@@ -401,223 +389,16 @@ local function parse_remote_addr(route_remote_addrs)
     return ip_ins
 end
 
-local function pre_update_route(self, path, route, opts)
-    if type(path) ~= "string" then
-        error("invalid argument path", 2)
-    end
-
-    if type(route.metadata) == "nil" and type(route.handler) == "nil" then
-        error("missing argument metadata or handler", 2)
-    end
-
-    local method  = route.methods
-    local bit_methods
-    if type(method) ~= "table" then
-        bit_methods = method and METHODS[method] or 0
-
-    else
-        bit_methods = 0
-        for _, m in ipairs(method) do
-            bit_methods = bit.bor(bit_methods, METHODS[m])
-        end
-    end
-
-    local route_opts = {}
-    clear_tab(route_opts)
-
-    if route.vars then
-        if type(route.vars) ~= "table" then
-            error("invalid argument vars", 2)
-        end
-
-        local route_expr, err = expr.new(route.vars)
-        if not route_expr then
-            error("failed to handle expression: " .. err, 2)
-        end
-        route_opts.vars = route_expr
-    end
-
-    local hosts = route.hosts
-    if type(hosts) == "table" and #hosts > 0 then
-        route_opts.hosts = {}
-        for _, h in ipairs(hosts) do
-            local is_wildcard = false
-            if h and h:sub(1, 1) == '*' then
-                is_wildcard = true
-                h = h:sub(2)
-            end
-
-            h = str_lower(h)
-            insert_tab(route_opts.hosts, is_wildcard)
-            insert_tab(route_opts.hosts, h)
-        end
-
-    elseif type(hosts) == "string" then
-        local is_wildcard = false
-        local host = str_lower(hosts)
-        if host:sub(1, 1) == '*' then
-            is_wildcard = true
-            host = host:sub(2)
-        end
-
-        route_opts.hosts = {is_wildcard, host}
-    end
-
-    route_opts.path_org = path
-    route_opts.param = false
-
-    local pos = not opts.no_param_match and str_find(path, ':', 1, true)
-    if pos then
-        path = path:sub(1, pos - 1)
-        route_opts.path_op = "<="
-        route_opts.path = path
-        route_opts.param = true
-
-    else
-        pos = str_find(path, '*', 1, true)
-        if pos then
-            if pos ~= #path then
-                route_opts.param = true
-            end
-            path = path:sub(1, pos - 1)
-            route_opts.path_op = "<="
-        else
-            route_opts.path_op = "="
-        end
-        route_opts.path = path
-    end
-
-    log_info("path: ", route_opts.path, " operator: ", route_opts.path_op)
-
-    route_opts.metadata = route.metadata
-    route_opts.handler  = route.handler
-    route_opts.method   = bit_methods
-    route_opts.filter_fun   = route.filter_fun
-    route_opts.priority = route.priority or 0
-
-    local err
-    local remote_addrs = route.remote_addrs
-    route_opts.matcher_ins, err = parse_remote_addr(remote_addrs)
-    if err then
-        error("invalid IP address: " .. err, 2)
-    end
-
-    route_opts.id = route.id
-    modify_route(self, route_opts)
-end
-
-local function pre_delete_route(self, path, route, opts)
-    if type(path) ~= "string" then
-        error("invalid argument path", 2)
-    end
-
-    local route_opts = {}
-
-    local method  = route.methods
-    local bit_methods
-    if type(method) ~= "table" then
-        bit_methods = method and METHODS[method] or 0
-
-    else
-        bit_methods = 0
-        for _, m in ipairs(method) do
-            bit_methods = bit.bor(bit_methods, METHODS[m])
-        end
-    end
-
-    clear_tab(route_opts)
-
-    if route.vars then
-        if type(route.vars) ~= "table" then
-            error("invalid argument vars", 2)
-        end
-
-        local route_expr, err = expr.new(route.vars)
-        if not route_expr then
-            error("failed to handle expression: " .. err, 2)
-        end
-        route_opts.vars = route_expr
-    end
-
-    local hosts = route.hosts
-    if type(hosts) == "table" and #hosts > 0 then
-        route_opts.hosts = {}
-        for _, h in ipairs(hosts) do
-            local is_wildcard = false
-            if h and h:sub(1, 1) == '*' then
-                is_wildcard = true
-                h = h:sub(2)
-            end
-
-            h = str_lower(h)
-            insert_tab(route_opts.hosts, is_wildcard)
-            insert_tab(route_opts.hosts, h)
-        end
-
-    elseif type(hosts) == "string" then
-        local is_wildcard = false
-        local host = str_lower(hosts)
-        if host:sub(1, 1) == '*' then
-            is_wildcard = true
-            host = host:sub(2)
-        end
-
-        route_opts.hosts = {is_wildcard, host}
-    end
-
-    route_opts.path_org = path
-    route_opts.param = false
-
-    local pos = not opts.no_param_match and str_find(path, ':', 1, true)
-    if pos then
-        path = path:sub(1, pos - 1)
-        route_opts.path_op = "<="
-        route_opts.path = path
-        route_opts.param = true
-
-    else
-        pos = str_find(path, '*', 1, true)
-        if pos then
-            if pos ~= #path then
-                route_opts.param = true
-            end
-            path = path:sub(1, pos - 1)
-            route_opts.path_op = "<="
-        else
-            route_opts.path_op = "="
-        end
-        route_opts.path = path
-    end
-
-    log_info("path: ", route_opts.path, " operator: ", route_opts.path_op)
-
-    route_opts.metadata = route.metadata
-    route_opts.handler  = route.handler
-    route_opts.method   = bit_methods
-    route_opts.filter_fun   = route.filter_fun
-    route_opts.priority = route.priority or 0
-
-    local err
-    local remote_addrs = route.remote_addrs
-    route_opts.matcher_ins, err = parse_remote_addr(remote_addrs)
-    if err then
-        error("invalid IP address: " .. err, 2)
-    end
-
-    route_opts.id = route.id
-    remove_route(self, route_opts)
-end
-
 local pre_insert_route
 do
     local route_opts = {}
 
-function pre_insert_route(self, path, route, global_opts)
+function pre_insert_route(self, path, route, global_opts, op)
     if type(path) ~= "string" then
         error("invalid argument path", 2)
     end
 
-    if type(route.metadata) == "nil" and type(route.handler) == "nil" then
+    if type(route.metadata) == "nil" and type(route.handler) == "nil" and op ~= 2 then
         error("missing argument metadata or handler", 2)
     end
 
@@ -713,7 +494,14 @@ function pre_insert_route(self, path, route, global_opts)
     end
 
     route_opts.id = route.id
-    insert_route(self, route_opts)
+
+    if not op then
+        insert_route(self, route_opts)
+    elseif op == 1 then
+        modify_route(self, route_opts)
+    elseif op == 2 then
+        remove_route(self, route_opts)
+    end
 end
 
 end -- do
@@ -770,7 +558,7 @@ function _M.free(self)
     local it = self.tree_it
     if it then
         radix.radix_tree_stop(it)
-        C.free(it)
+        ffi.C.free(it)
         self.tree_it = nil
     end
 
@@ -840,7 +628,7 @@ local function compare_param(req_path, route, opts)
     end
 
     local pat, names = fetch_pat(route.path_org)
-    log_debug("pcre pat: ", pat)
+    log_info("pcre pat: ", pat)
     if #names == 0 then
         return true
     end
@@ -893,7 +681,6 @@ local function match_route_opts(route, opts, args)
         end
     end
 
-    -- log_info("route.hosts: ", type(route.hosts))
     if route.hosts then
         local matched = false
 
@@ -916,6 +703,7 @@ local function match_route_opts(route, opts, args)
             end
         end
 
+        log_info("hosts match: ", matched)
         if not matched then
             return false
         end
@@ -954,11 +742,16 @@ end
 
 
 local function _match_from_routes(routes, path, opts, args)
+    if opts == empty_table then
+        local route = routes[1]
+        if not route or route.method == 0 then
+            return route
+        end
+    end
+
     local opts_matched_exists = (opts.matched ~= nil)
     for _, route in ipairs(routes) do
         if match_route_opts(route, opts, args) then
-            -- log_info("matched route: ", require("cjson").encode(route))
-            -- log_info("matched path: ", path)
             if compare_param(path, route, opts) then
                 if opts_matched_exists then
                     opts.matched._path = route.path_org
@@ -1061,14 +854,14 @@ function _M.update_route(self, pre_r, r, opts)
     end
 
     for _, p in ipairs(common) do
-        pre_update_route(self, p, r, opts)
+        pre_insert_route(self, p, r, opts, 1)
         
         pre_t[p] = nil
         t[p] = nil
     end
 
     for k,v in pairs(pre_t) do
-        pre_delete_route(self, k, pre_r, opts)
+        pre_insert_route(self, k, pre_r, opts, 2)
     end
 
     local opts = {
@@ -1095,7 +888,7 @@ function _M.delete_route(self, r, opts)
     end
 
     for _, p in ipairs(path_tb) do
-        pre_delete_route(self, p, r, opts)
+        pre_insert_route(self, p, r, opts, 2)
     end
 
     return nil

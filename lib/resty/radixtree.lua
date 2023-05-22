@@ -713,9 +713,9 @@ end
 local function match_route_opts(route, opts, args)
     local method = opts.method
     local opts_matched_exists = (opts.matched ~= nil)
-    if route.method ~= 0 then
+    if route.method ~= nil and route.method ~= 0 then
         if not method or type(METHODS[method]) ~= "number" or
-           bit.band(route.method, METHODS[method]) == 0 then
+            bit.band(route.method, METHODS[method]) == 0 then
             return false
         end
     end

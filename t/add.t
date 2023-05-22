@@ -72,11 +72,14 @@ echo directive provided by ngx_http_echo_module.
             remote_addr = "127.0.0.1",
             vars = ngx.var,
         }
+
+        ngx.log(ngx.ERR, "check:", add_opts["hosts"][1], add_opts["paths"][1], opts["host"])
         ngx.say(rx:match("/abc/123456aa", opts))
      }
  }
 
-
+--- error_log
+check:*.love.com/abc/123*abc.love.com
 
 --- request
 

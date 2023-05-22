@@ -1,15 +1,13 @@
-use Test::Nginx::Socket 'no_plan';
+# vim:set ft= ts=4 sw=4 et fdm=marker:
 
+use t::RX 'no_plan';
+
+repeat_each(1);
 run_tests();
 
 __DATA__
 
-=== TEST 1: hello, world
-
-This is just a simple demonstration of the 
-
-echo directive provided by ngx_http_echo_module.
-
+=== TEST 1: test add
 --- config
 
  location /t {

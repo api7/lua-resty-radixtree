@@ -167,8 +167,17 @@ end
 
 
     local ngx_log = ngx.log
+    local ngx_DEBUG = ngx.DEBUG
     local ngx_INFO = ngx.INFO
     local ngx_ERR = ngx.ERR
+local function log_debug(...)
+    if cur_level and ngx_DEBUG > cur_level then
+        return
+    end
+
+    return ngx_log(ngx_DEBUG, ...)
+end
+
 local function log_info(...)
     if cur_level and ngx_INFO > cur_level then
         return
@@ -186,6 +195,7 @@ local function log_err(...)
 end
 
 local mt = { __index = _M, __gc = gc_free }
+
 
 local function sort_route(route_a, route_b)
     return (route_a.priority or 0) > (route_b.priority or 0)
@@ -365,9 +375,8 @@ local function insert_route(self, opts)
     self.match_data_index = self.match_data_index + 1
     self.match_data[self.match_data_index] = {opts}
 
-    log_info("insert route path: radix_tree_insert: ", path, opts.id, " dataprt: ", self.match_data_index)
     radix.radix_tree_insert(self.tree, path, #path, self.match_data_index)
-    
+    log_info("insert route path: ", path, " dataprt: ", self.match_data_index)
     return true
 end
 
@@ -388,6 +397,7 @@ local function parse_remote_addr(route_remote_addrs)
 
     return ip_ins
 end
+
 
 local pre_insert_route
 do
@@ -558,7 +568,7 @@ function _M.free(self)
     local it = self.tree_it
     if it then
         radix.radix_tree_stop(it)
-        ffi.C.free(it)
+        C.free(it)
         self.tree_it = nil
     end
 
@@ -628,7 +638,7 @@ local function compare_param(req_path, route, opts)
     end
 
     local pat, names = fetch_pat(route.path_org)
-    log_info("pcre pat: ", pat)
+    log_debug("pcre pat: ", pat)
     if #names == 0 then
         return true
     end
@@ -703,7 +713,6 @@ local function match_route_opts(route, opts, args)
             end
         end
 
-        log_info("hosts match: ", matched)
         if not matched then
             return false
         end
@@ -742,13 +751,6 @@ end
 
 
 local function _match_from_routes(routes, path, opts, args)
-    if opts == empty_table then
-        local route = routes[1]
-        if not route or route.method == 0 then
-            return route
-        end
-    end
-
     local opts_matched_exists = (opts.matched ~= nil)
     for _, route in ipairs(routes) do
         if match_route_opts(route, opts, args) then

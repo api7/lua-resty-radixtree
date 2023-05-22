@@ -15,7 +15,7 @@ __DATA__
         local radix = require("resty.radixtree")
         local rx = radix.new({
             {
-                paths = {"/aa", "/bb*", "/name/:name/*other"},
+                paths = {"/aa", "/bb*"},
                 hosts = {"*.bar.com", "foo.com"},
                 methods = {"GET", "POST", "PUT"},
                 remote_addrs = {"127.0.0.1","192.168.0.0/16",
@@ -33,13 +33,13 @@ __DATA__
         })
 
         -- try to match
-        local opts = {
+        local opts_check = {
             host = "foo.com",
             method = "GET",
             remote_addr = "127.0.0.1",
             vars = ngx.var,
         }
-        ngx.say(rx:match("/aa", opts))
+        ngx.say(rx:match("/aa", opts_check))
      }
  }
 --- request

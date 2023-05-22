@@ -398,32 +398,7 @@ local function parse_remote_addr(route_remote_addrs)
     return ip_ins
 end
 
-
-local pre_insert_route
-do
-    local route_opts = {}
-
-function pre_insert_route(self, path, route, global_opts, op)
-    if type(path) ~= "string" then
-        error("invalid argument path", 2)
-    end
-
-    if type(route.metadata) == "nil" and type(route.handler) == "nil" and op ~= 2 then
-        error("missing argument metadata or handler", 2)
-    end
-
-    local method  = route.methods
-    local bit_methods
-    if type(method) ~= "table" then
-        bit_methods = method and METHODS[method] or 0
-
-    else
-        bit_methods = 0
-        for _, m in ipairs(method) do
-            bit_methods = bit.bor(bit_methods, METHODS[m])
-        end
-    end
-
+local function common_route_data(path, route, route_opts, global_opts)
     clear_tab(route_opts)
 
     if route.vars then
@@ -504,14 +479,84 @@ function pre_insert_route(self, path, route, global_opts, op)
     end
 
     route_opts.id = route.id
+end
 
-    if not op then
-        insert_route(self, route_opts)
-    elseif op == 1 then
-        modify_route(self, route_opts)
-    elseif op == 2 then
-        remove_route(self, route_opts)
+local function pre_update_route(self, path, route, global_opts)
+    if type(path) ~= "string" then 
+        error("invalid argument path", 2)
+    end  
+
+    if type(route.metadata) == "nil" and type(route.handler) == "nil" then
+        error("missing argument metadata or handler", 2)
+    end  
+
+    local method  = route.methods
+    local bit_methods
+    if type(method) ~= "table" then 
+        bit_methods = method and METHODS[method] or 0
+
+    else 
+        bit_methods = 0
+        for _, m in ipairs(method) do
+            bit_methods = bit.bor(bit_methods, METHODS[m])
+        end  
+    end  
+
+    local route_opts = {}
+    common_route_data(path, route, route_opts, global_opts)
+    modify_route(self, route_opts)
+end
+
+local function pre_delete_route(self, path, route, global_opts)
+    if type(path) ~= "string" then
+        error("invalid argument path", 2)
     end
+
+    local route_opts = {}
+
+    local method  = route.methods
+    local bit_methods
+    if type(method) ~= "table" then
+        bit_methods = method and METHODS[method] or 0
+
+    else
+        bit_methods = 0
+        for _, m in ipairs(method) do
+            bit_methods = bit.bor(bit_methods, METHODS[m])
+        end
+    end
+
+    common_route_data(path, route, route_opts, global_opts)
+    remove_route(self, route_opts)
+end
+
+local pre_insert_route
+do
+    local route_opts = {}
+
+function pre_insert_route(self, path, route, global_opts)
+    if type(path) ~= "string" then
+        error("invalid argument path", 2)
+    end
+
+    if type(route.metadata) == "nil" and type(route.handler) == "nil" then
+        error("missing argument metadata or handler", 2)
+    end
+
+    local method  = route.methods
+    local bit_methods
+    if type(method) ~= "table" then
+        bit_methods = method and METHODS[method] or 0
+
+    else
+        bit_methods = 0
+        for _, m in ipairs(method) do
+            bit_methods = bit.bor(bit_methods, METHODS[m])
+        end
+    end
+
+    common_route_data(path, route, route_opts, global_opts)
+    insert_route(self, route_opts)
 end
 
 end -- do
@@ -856,14 +901,14 @@ function _M.update_route(self, pre_r, r, opts)
     end
 
     for _, p in ipairs(common) do
-        pre_insert_route(self, p, r, opts, 1)
+        pre_update_route(self, p, r, opts)
         
         pre_t[p] = nil
         t[p] = nil
     end
 
     for k,v in pairs(pre_t) do
-        pre_insert_route(self, k, pre_r, opts, 2)
+        pre_delete_route(self, k, pre_r, opts)
     end
 
     local opts = {
@@ -890,7 +935,7 @@ function _M.delete_route(self, r, opts)
     end
 
     for _, p in ipairs(path_tb) do
-        pre_insert_route(self, p, r, opts, 2)
+        pre_delete_route(self, p, r, opts)
     end
 
     return nil

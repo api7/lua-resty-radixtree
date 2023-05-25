@@ -399,6 +399,18 @@ local function parse_remote_addr(route_remote_addrs)
 end
 
 local function common_route_data(path, route, route_opts, global_opts)
+    local method  = route.methods
+    local bit_methods
+    if type(method) ~= "table" then
+        bit_methods = method and METHODS[method] or 0
+
+    else
+        bit_methods = 0
+        for _, m in ipairs(method) do
+            bit_methods = bit.bor(bit_methods, METHODS[m])
+        end
+    end
+
     clear_tab(route_opts)
 
     if route.vars then
@@ -484,23 +496,11 @@ end
 local function pre_update_route(self, path, route, global_opts)
     if type(path) ~= "string" then 
         error("invalid argument path", 2)
-    end  
+    end
 
     if type(route.metadata) == "nil" and type(route.handler) == "nil" then
         error("missing argument metadata or handler", 2)
-    end  
-
-    local method  = route.methods
-    local bit_methods
-    if type(method) ~= "table" then 
-        bit_methods = method and METHODS[method] or 0
-
-    else 
-        bit_methods = 0
-        for _, m in ipairs(method) do
-            bit_methods = bit.bor(bit_methods, METHODS[m])
-        end  
-    end  
+    end
 
     local route_opts = {}
     common_route_data(path, route, route_opts, global_opts)
@@ -513,19 +513,6 @@ local function pre_delete_route(self, path, route, global_opts)
     end
 
     local route_opts = {}
-
-    local method  = route.methods
-    local bit_methods
-    if type(method) ~= "table" then
-        bit_methods = method and METHODS[method] or 0
-
-    else
-        bit_methods = 0
-        for _, m in ipairs(method) do
-            bit_methods = bit.bor(bit_methods, METHODS[m])
-        end
-    end
-
     common_route_data(path, route, route_opts, global_opts)
     remove_route(self, route_opts)
 end
@@ -541,18 +528,6 @@ function pre_insert_route(self, path, route, global_opts)
 
     if type(route.metadata) == "nil" and type(route.handler) == "nil" then
         error("missing argument metadata or handler", 2)
-    end
-
-    local method  = route.methods
-    local bit_methods
-    if type(method) ~= "table" then
-        bit_methods = method and METHODS[method] or 0
-
-    else
-        bit_methods = 0
-        for _, m in ipairs(method) do
-            bit_methods = bit.bor(bit_methods, METHODS[m])
-        end
     end
 
     common_route_data(path, route, route_opts, global_opts)

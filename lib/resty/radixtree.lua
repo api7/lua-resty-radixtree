@@ -293,8 +293,6 @@ local function remove_route(self, opts)
             return false
         end
 
-        --todo: self.hash_path[path] = nil while table size is 1.
-
         for i, route in ipairs(route_arr) do
             if route.id == opts.id then
                 table.remove(route_arr, i)

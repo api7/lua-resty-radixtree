@@ -178,6 +178,7 @@ local function log_debug(...)
     return ngx_log(ngx_DEBUG, ...)
 end
 
+
 local function log_info(...)
     if cur_level and ngx_INFO > cur_level then
         return
@@ -185,6 +186,7 @@ local function log_info(...)
 
     return ngx_log(ngx_INFO, ...)
 end
+
 
 local function log_err(...)
     if cur_level and ngx_ERR > cur_level then
@@ -194,12 +196,14 @@ local function log_err(...)
     return ngx_log(ngx_ERR, ...)
 end
 
+
 local mt = { __index = _M, __gc = gc_free }
 
 
 local function sort_route(route_a, route_b)
     return (route_a.priority or 0) > (route_b.priority or 0)
 end
+
 
 local function insert_tab_in_order(tab, val, func)
     for i, elem in ipairs(tab) do
@@ -211,6 +215,7 @@ local function insert_tab_in_order(tab, val, func)
     end
     insert_tab(tab, val)
 end
+
 
 local function update_tab_in_order(tab, val, func)
     local idx = -1
@@ -240,6 +245,7 @@ local function update_tab_in_order(tab, val, func)
     insert_tab(tab, val)
     remove_tab(tab, idx)
 end
+
 
 local function modify_route(self, opts)
     local path = opts.path
@@ -274,6 +280,7 @@ local function modify_route(self, opts)
     
     return true
 end
+
 
 local function remove_route(self, opts)
     local path = opts.path
@@ -346,6 +353,7 @@ local function remove_route(self, opts)
     return true
 end
 
+
 local function insert_route(self, opts)
     local path = opts.path
     opts = clone_tab(opts)
@@ -397,6 +405,7 @@ local function parse_remote_addr(route_remote_addrs)
 
     return ip_ins
 end
+
 
 local function common_route_data(path, route, route_opts, global_opts)
     local method  = route.methods
@@ -493,6 +502,7 @@ local function common_route_data(path, route, route_opts, global_opts)
     route_opts.id = route.id
 end
 
+
 local function pre_update_route(self, path, route, global_opts)
     if type(path) ~= "string" then 
         error("invalid argument path", 2)
@@ -507,6 +517,7 @@ local function pre_update_route(self, path, route, global_opts)
     modify_route(self, route_opts)
 end
 
+
 local function pre_delete_route(self, path, route, global_opts)
     if type(path) ~= "string" then
         error("invalid argument path", 2)
@@ -517,9 +528,11 @@ local function pre_delete_route(self, path, route, global_opts)
     remove_route(self, route_opts)
 end
 
+
 local pre_insert_route
 do
     local route_opts = {}
+
 
 function pre_insert_route(self, path, route, global_opts)
     if type(path) ~= "string" then
@@ -534,12 +547,14 @@ function pre_insert_route(self, path, route, global_opts)
     insert_route(self, route_opts)
 end
 
+
 end -- do
 
 
 local default_global_opts = {
     no_param_match = false,
 }
+
 
 function _M.new(routes, opts)
     if not routes then
@@ -616,6 +631,7 @@ if not lru_pat then
     error("failed to generate new lru object: " .. err)
 end
 
+
 local function fetch_pat(path)
     local pat = lru_pat:get(path)
     if pat then
@@ -652,6 +668,7 @@ local function fetch_pat(path)
     return pat, names
 end
 
+
 local function compare_param(req_path, route, opts)
     if not opts.matched and not route.param then
         return true
@@ -684,6 +701,7 @@ local function compare_param(req_path, route, opts)
     end
     return true
 end
+
 
 local function match_route_opts(route, opts, args)
     local method = opts.method
@@ -832,6 +850,7 @@ local function match_route(self, path, opts, args)
     return nil
 end
 
+
 function _M.match(self, path, opts)
     local route, err = match_route(self, path, opts or empty_table)
     if not route then
@@ -843,6 +862,7 @@ function _M.match(self, path, opts)
 
     return route.metadata
 end
+
 
 function _M.update_route(self, pre_r, r, opts)
     if pre_r == nil or r == nil  then
@@ -895,6 +915,7 @@ function _M.update_route(self, pre_r, r, opts)
     end
 end
 
+
 function _M.delete_route(self, r, opts)
     if r == nil then
         return "illegal route"
@@ -916,6 +937,7 @@ function _M.delete_route(self, r, opts)
     return nil
 end
 
+
 function _M.add_route(self, route, opts)
     if route == nil then
         return "illegal route"
@@ -936,6 +958,7 @@ function _M.add_route(self, route, opts)
 
     return nil
 end
+
 
 function _M.dispatch(self, path, opts, ...)
     if type(path) ~= "string" then

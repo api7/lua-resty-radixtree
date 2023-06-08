@@ -60,6 +60,7 @@ int radix_tree_next(void *it, const unsigned char *buf, size_t len);
 int radix_tree_stop(void *it);
 
 void *radix_tree_new_it(void *t);
+int radix_tree_remove(void *t, unsigned char *buf, size_t len);
 
 #ifdef __cplusplus
 }

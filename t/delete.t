@@ -105,13 +105,8 @@ __DATA__
         ngx.say(rx:match("/nigolas/cage/oscars", opts))
      }
  }
-
-
-
 --- request
-
 GET /t?name=cinema&weight=20
-
 --- response_body
 nil
 --- error_code: 200

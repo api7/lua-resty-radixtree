@@ -99,18 +99,10 @@ __DATA__
             vars = ngx.var,
         }
         ngx.say(rx:match("/nigolas/cage/oscars", opts))
-
-
-
      }
  }
-
-
-
 --- request
-
 GET /t?name=cinema&weight=20
-
 --- response_body
 metadata update route succeed.
 --- error_code: 200

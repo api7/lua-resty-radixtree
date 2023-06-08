@@ -75,14 +75,10 @@ __DATA__
         ngx.say(rx:match("/abc/123456aa", opts))
      }
  }
-
 --- error_log
 check:*.love.com/abc/123*abc.love.com
-
 --- request
-
 GET /t?name=json&weight=20
-
 --- response_body
 metadata add route succeed.
 --- error_code: 200

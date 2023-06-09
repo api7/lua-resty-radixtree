@@ -246,7 +246,7 @@ local rx = radix.new({
 
 ## Parameters in Path
 
-You can specify parameters on a path. These can the be dynamically obtained from `opts.matched.parameter-name`.
+You can specify parameters on a path. These can then be dynamically obtained from `opts.matched.parameter-name`:
 
 ```lua
 local rx = radix.new({

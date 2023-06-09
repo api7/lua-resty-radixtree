@@ -19,6 +19,7 @@ Used by:
 Developed by [API7.ai](https://api7.ai/).
 
 > **Note**
+> 
 > API7.ai provides technical support for the software it maintains like this library and [Apache APISIX](https://github.com/apache/apisix). Please [contact us](https://api7.ai/contact) to learn more.
 
 # Table of Contents

@@ -293,22 +293,19 @@ local function remove_route(self, opts)
             return false
         end
 
-        local idx = -1
         for i, route in ipairs(route_arr) do
             if route.id == opts.id then
-                idx = i
-                break
+                table.remove(route_arr, i)
+                if #route_arr == 0 then
+                    self.hash_path[path] = nil
+                end
+
+                return true
             end
         end
 
-        if idx == -1 then
-            log_err("cannot find route in hash_path.", path, opts.id)
-            return false
-        end
-
-        table.remove(route_arr, idx)
-
-        return true
+        log_err("cannot find route in hash_path.", path, opts.id)
+        return false
     end
 
     local data_idx = radix.radix_tree_find(self.tree, path, #path)
@@ -342,15 +339,15 @@ local function remove_route(self, opts)
         for i, elem in ipairs(routes) do
             if elem.id == opts.id then
                 table.remove(routes, i)
-                return
+                return true
             end
         end
     
         log_err("removed route does not exist.", opts.id)
-        return
+        return false
     end
 
-    return true
+    return false
 end
 
 
@@ -905,10 +902,6 @@ function _M.update_route(self, pre_r, r, opts)
     for k,v in pairs(pre_t) do
         pre_delete_route(self, k, pre_r, opts)
     end
-
-    local opts = {
-        no_param_match = true
-    }
 
     for k,v in pairs(t) do
         pre_insert_route(self, k, r, opts)

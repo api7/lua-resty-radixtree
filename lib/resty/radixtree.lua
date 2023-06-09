@@ -906,10 +906,6 @@ function _M.update_route(self, pre_r, r, opts)
         pre_delete_route(self, k, pre_r, opts)
     end
 
-    local opts = {
-        no_param_match = true
-    }
-
     for k,v in pairs(t) do
         pre_insert_route(self, k, r, opts)
     end

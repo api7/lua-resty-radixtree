@@ -1,127 +1,223 @@
-# Table of Contents
+# Name
 
-- [Table of Contents](#table-of-contents)
-  - [Name](#name)
-  - [Synopsis](#synopsis)
-  - [Methods](#methods)
-    - [new](#new)
-    - [Path](#path)
-      - [Full path match](#full-path-match)
-      - [Prefix match](#prefix-match)
-      - [Parameters in path](#parameters-in-path)
-    - [match](#match)
-    - [dispatch](#dispatch)
-  - [Install](#install)
-    - [Compile and install](#compile-and-install)
-  - [DEV ENV](#dev-env)
-    - [Install Dependencies](#install-dependencies)
-  - [Benchmark](#benchmark)
+Radix tree implementation based on [rax](https://github.com/antirez/rax).
 
-## Name
-
-This is Lua implementation library base on FFI for [rax](https://github.com/antirez/rax).
+## Status
 
 [![Build Status](https://github.com/api7/lua-resty-radixtree/actions/workflows/test.yml/badge.svg)](https://github.com/api7/lua-resty-radixtree/actions/workflows/test.yml)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://github.com/iresty/lua-resty-radixtree/blob/master/LICENSE)
 
-This project depends on [lua-resty-ipmatcher](https://github.com/api7/lua-resty-ipmatcher) and [lua-resty-expr](https://github.com/api7/lua-resty-expr).
+Dependencies:
 
-This project has been working in microservices API gateway [Apache APISIX](https://github.com/apache/incubator-apisix).
+- [lua-resty-ipmatcher](https://github.com/api7/lua-resty-ipmatcher)
+- [lua-resty-expr](https://github.com/api7/lua-resty-expr)
 
-The project is open sourced by [API7.ai](https://api7.ai/) Inc.
+Used by:
 
-In addition to this open source version, our company also provides a more powerful and performing commercial version, and provides technical support. If you are interested in our commercial version, please [contact us](https://www.apiseven.com/).
+- [Apache APISIX](https://github.com/apache/apisix): A high-performance cloud native API gateway.
 
-## Synopsis
+Developed by [API7.ai](https://api7.ai/).
+
+> **Note**
+> API7.ai provides technical support for the software it maintains like this library and [Apache APISIX](https://github.com/apache/apisix). Please [contact us](https://api7.ai/contact) to learn more.
+
+# Table of Contents
+
+- [Name](#name)
+  - [Status](#status)
+- [Table of Contents](#table-of-contents)
+- [Synopsis](#synopsis)
+- [Methods](#methods)
+  - [new](#new)
+    - [Usage](#usage)
+    - [Attributes](#attributes)
+  - [match](#match)
+    - [Usage](#usage-1)
+    - [Attributes](#attributes-1)
+  - [dispatch](#dispatch)
+    - [Usage](#usage-2)
+    - [Attributes](#attributes-2)
+- [Examples](#examples)
+  - [Full Path Match](#full-path-match)
+  - [Prefix Match](#prefix-match)
+  - [Parameters in Path](#parameters-in-path)
+- [Installation](#installation)
+  - [From LuaRocks](#from-luarocks)
+  - [From Source](#from-source)
+- [Development](#development)
+- [Benchmarks](#benchmarks)
+
+# Synopsis
 
 ```lua
- location / {
-     content_by_lua_block {
-        local radix = require("resty.radixtree")
-        local rx = radix.new({
-            {
-                paths = {"/aa", "/bb*", "/name/:name/*other"},
-                hosts = {"*.bar.com", "foo.com"},
-                methods = {"GET", "POST", "PUT"},
-                remote_addrs = {"127.0.0.1","192.168.0.0/16",
-                                "::1", "fe80::/32"},
-                vars = {
-                    {"arg_name", "==", "json"},
-                    {"arg_weight", ">", 10},
-                },
-                filter_fun = function(vars, opts)
-                    return vars["arg_name"] == "json"
-                end,
-
-                metadata = "metadata /bb",
-            }
-        })
-
-        -- try to match
-        local opts = {
-            host = "foo.com",
-            method = "GET",
-            remote_addr = "127.0.0.1",
-            vars = ngx.var,
+location / {
+  set $arg_access 'admin';
+  content_by_lua_block {
+    local radix = require("resty.radixtree")
+    local rx = radix.new({
+        {
+            paths = { "/login/*action" },
+            metadata = { "metadata /login/action" },
+            methods = { "GET", "POST", "PUT" },
+            remote_addrs = { "127.0.0.1", "192.168.0.0/16", "::1", "fe80::/32" }
+        },
+        {
+            paths = { "/user/:name" },
+            metadata = { "metadata /user/name" },
+            methods = { "GET" },
+        },
+        {
+            paths = { "/admin/:name", "/superuser/:name" },
+            metadata = { "metadata /admin/name" },
+            methods = { "GET", "POST", "PUT" },
+            filter_fun = function(vars, opts)
+                return vars["arg_access"] == "admin"
+            end
         }
-        ngx.say(rx:match("/aa", opts))
+    })
 
-        -- try to match and store the cached value
-        local opts = {
-            host = "foo.com",
-            method = "GET",
-            remote_addr = "127.0.0.1",
-            vars = ngx.var,
-            matched = {}
-        }
-        ngx.say(rx:match("/name/json/foo/bar/gloo", opts))
-        ngx.say("name: ", opts.matched.name, " other: ", opts.matched.other)
-     }
- }
+    local opts = {
+        method = "POST",
+        remote_addr = "127.0.0.1",
+        matched = {}
+    }
+
+    -- matches the first route
+    ngx.say(rx:match("/login/update", opts))   -- metadata /login/action
+    ngx.say("action: ", opts.matched.action)   -- action: update
+
+    ngx.say(rx:match("/login/register", opts)) -- metadata /login/action
+    ngx.say("action: ", opts.matched.action)   -- action: register
+
+    local opts = {
+        method = "GET",
+        matched = {}
+    }
+
+    -- matches the second route
+    ngx.say(rx:match("/user/john", opts)) -- metadata /user/name
+    ngx.say("name: ", opts.matched.name)  -- name: john
+
+    local opts = {
+        method = "POST",
+        vars = ngx.var,
+        matched = {}
+    }
+
+    -- matches the third route
+    ngx.say(rx:match("/admin/jane", opts))     -- metadata /admin/name
+    ngx.say("admin name: ", opts.matched.name) -- admin name: jane
+    }
+}
 ```
 
 [Back to TOC](#table-of-contents)
 
-## Methods
+# Methods
 
-### new
+## new
 
-`syntax: rx, err = radix.new(routes, opts)`
+Creates a new radix tree to store routes.
 
-The routes is an array table, like `{ {...}, {...}, {...} }`, Each element in the array is a route, which is a hash table.
+### Usage
 
-The attributes of each element may contain these:
+```lua
+rx, err = radix.new(routes, opts)
+```
 
-|name       |option  |description|example|
-|:--------  |:--------|:-----------|:-----|
-|paths      |required|A list of client request path. The default is a full match, but if the end of the path is `*`, it means that this is a prefix path. For example `/foo*`, it'll match `/foo/bar` or `/foo/glo/grey` etc.|{"/", "/aa", "/bb"}|
-|hosts      |option  |A list of client request host, not only supports normal domain name, but also supports wildcard name.|{"foo.com", "*.bar.com"}|
-|remote_addrs|option  |A list of client remote address(IPv4 and IPv6), and we can use CIDR format, eg `192.168.1.0/24`.|{"127.0.0.1", "192.0.0.0/8", "::1", "fe80::/32"}|
-|methods    |option  |A list of method name. Here is full valid method list: "GET", "POST", "PUT", "DELETE", "PATCH", "HEAD", "OPTIONS", "CONNECT" and "TRACE".|{"GET", "POST"}|
-|vars       |option  |A DSL to evaluate with the given `opts.vars` or `ngx.var`. See https://github.com/api7/lua-resty-expr#new |{{"arg_name", "==", "json"}, {"arg_age", ">", 18}}|
-|filter_fun |option  |User defined filter function, We can use it to achieve matching logic for special scenes. `radixtree` will pass `vars` and other arguments when matching route.|function(vars) return vars["arg_name"] == "json" end|
-|priority      |option  |Routing priority, default is 0.|priority = 100|
-|metadata   |option  |Will return this field if using `rx:match` to match route.||
-|handler    |option  |Will call this function using `rx:dispatch` to match route.||
+### Attributes
 
-The `opts` is an optional configuration controls the behavior of match. Fields below are supported:
-|name       |description|default|
-|:--------  |:-----------|:-----|
-|no_param_match|disable [Parameters in path](#parameters-in-path)|false|
+`routes` is an array (`{ {...}, {...}, {...} }`) where each element is a route.
 
-### Path
+Each route can have the following attributes:
 
-#### Full path match
+| Name         | Required? | Description                                                                                                                                                                                                  | Example                                              |
+| ------------ | --------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ---------------------------------------------------- |
+| paths        | Required  | List of request paths to match the route. By default does a full match. Adding `*` at the end will result in prefix match. For example, `/foo*` can match requests with paths `/foo/bar` and `/foo/car/far`. | {"/", "/foo", "/bar/\*"}                             |
+| hosts        | Optional  | List of host addresses to match the route. Supports wildcards. For example `*.bar.com` can match `foo.bar.com` and `car.bar.com`.                                                                            | {"foo.com", "\*.bar.com"}                            |
+| remote_addrs | Optional  | List of remote addresses (IPv4 or IPv6) to match the route. Supports CIDR format.                                                                                                                            | {"127.0.0.1", "192.0.0.0/8", "::1", "fe80::/32"}     |
+| methods      | Optional  | List of HTTP methods to match the route. Valid values: "GET", "POST", "PUT", "DELETE", "PATCH", "HEAD", "OPTIONS", "CONNECT" and "TRACE".                                                                    | {"GET", "POST"}                                      |
+| vars         | Optional  | DSL to evaluate with the provided `opts.vars` or `ngx.var`. See: [lua-resty-expr](https://github.com/api7/lua-resty-expr#new).                                                                               | {{"arg_name", "==", "json"}, {"arg_age", ">", 18}}   |
+| filter_fun   | Optional  | User defined filter function to match the route. Can be used for custom matching scenarios. `vars` and `opts` will be passed to the function when matching a route.                                          | function(vars) return vars["arg_name"] == "json" end |
+| priority     | Optional  | Route priority. Defaults to 0.                                                                                                                                                                               | priority = 100                                       |
+| metadata     | Optional  | `metadata` will be returned when a route matches while using `rx:match`.                                                                                                                                     |                                                      |
+| handler      | Optional  | `handler` function will be called when a route matches while using `rx:dispatch`                                                                                                                             |                                                      |
+
+`opts` is an optional configuration that controls the behavior of a match. It can have the following attribute:
+
+| Name           | Description                                       | Default |
+| -------------- | ------------------------------------------------- | ------- |
+| no_param_match | disable [Parameters in path](#parameters-in-path) | false   |
+
+[Back to TOC](#table-of-contents)
+
+## match
+
+Matches client request with routes and returns `metadata` if successful.
+
+### Usage
+
+```lua
+metadata = rx:match(path, opts)
+```
+
+### Attributes
+
+`path` is the client request path. For example, `"/foo/bar"`, `/user/john/send`.
+
+`opts` is an optional attribute and a table. It can have the following attributes:
+
+| Name        | Required? | Description                                                                          |
+|-------------|-----------|--------------------------------------------------------------------------------------|
+| method      | Optional  | HTTP method of the client request.                                                   |
+| host        | Optional  | Host address of the client request.                                                  |
+| remote_addr | Optional  | Remote address (IPv4 or IPv6) of the client. Supports CIDR format.                   |
+| paths       | Optional  | A list of client request paths.                                                      |
+| vars        | Optional  | A table to fetch variables. Defaults to `ngx.var` to fetch built-in Nginx variables. |
+
+[Back to TOC](#table-of-contents)
+
+## dispatch
+
+Matches client requests with routes and calls the `handler` function if successful.
+
+### Usage
+
+```lua
+ok = rx:dispatch(path, opts, ...)
+```
+
+### Attributes
+
+`path` is the client request path. For example, `"/api/metrics"`, `/admin/john/login`.
+
+`opts` is an optional attribute and a table. It can have the following attributes:
+
+| Name        | Required? | Description                                                                          |
+|-------------|-----------|--------------------------------------------------------------------------------------|
+| method      | Optional  | HTTP method of the client request.                                                   |
+| host        | Optional  | Host address of the client request.                                                  |
+| remote_addr | Optional  | Remote address (IPv4 or IPv6) of the client. Supports CIDR format.                   |
+| paths       | Optional  | A list of client request paths.                                                      |
+| vars        | Optional  | A table to fetch variables. Defaults to `ngx.var` to fetch built-in Nginx variables. |
+
+[Back to TOC](#table-of-contents)
+
+# Examples
+
+## Full Path Match
+
+Matching full paths with multiple paths specified:
 
 ```lua
 local rx = radix.new({
     {
-        paths = {"/aa", "/bb/cc", "/dd/ee/index.html"},
-        metadata = "metadata /aa",
+        paths = {"/foo", "/bar/car", "/doo/soo/index.html"},
+        metadata = "metadata /foo",
     },
     {
-        paths = {"/gg"},
-        metadata = "metadata /gg",
+        paths = {"/example"},
+        metadata = "metadata /example",
     },
     {
         paths = {"/index.html"},
@@ -130,84 +226,53 @@ local rx = radix.new({
 })
 ```
 
-Full path matching, allowing multiple paths to be specified at the same time.
+## Prefix Match
 
-#### Prefix match
+Matching based on prefix with multiple paths specified:
 
 ```lua
 local rx = radix.new({
     {
-        paths = {"/aa/*", "/bb/cc/*"},
-        metadata = "metadata /aa",
+        paths = {"/foo/*", "/bar/car/*"}, -- matches with `/foo/boo`, `/bar/car/sar/far`, etc.
+        metadata = "metadata /foo",
     },
     {
-        paths = {"/gg/*"},
-        metadata = "metadata /gg",
+        paths = {"/example/*"}, -- matches with `/example/boo`, `/example/car/sar/far`, etc.
+        metadata = "metadata /example",
     },
 })
 ```
 
-Path prefix matching, allowing multiple paths to be specified at the same time.
+## Parameters in Path
 
-#### Parameters in path
+You can specify parameters on a path. These can the be dynamically obtained from `opts.matched.parameter-name`.
 
 ```lua
 local rx = radix.new({
     {
-        -- This handler will match /user/john but will not match /user/ or /user
-        paths = {"/user/:user"},
+        -- matches with `/user/john` but not `/user/` or `/user`
+        paths = {"/user/:user"}, -- for `/user/john`, `opts.matched.user` will be `john`  
         metadata = "metadata /user",
     },
     {
-        -- However, this one will match /user/john/ and also /user/john/send/data
-        paths = {"/user/:user/*action"},
+        -- But this will match `/user/john/` and also `/user/john/send`
+        paths = {"/user/:user/*action"}, -- for `/user/john/send`, `opts.matched.user` will be `john` and `opts.matched.action` will be `send` 
         metadata = "metadata action",
     },
 })
 ```
 
-### match
-
-`syntax: metadata = rx:match(path, opts)`
-
-* `path`: client request path.
-* `opts`: a Lua table (optional).
-  * `method`: optional, method name of client request.
-  * `host`: optional, client request host.
-  * `remote_addr`: optional, client remote address like `192.168.1.100`.
-  * `paths`: optional, a list of client request path.
-  * `vars`: optional, a Lua table to fetch variable, default value is `ngx.var` to fetch Nginx builtin variable.
-
-Matches the route by `method`, `path` and `host` etc, and return `metadata` if successful.
-
-```lua
-local metadata = rx:match(ngx.var.uri, {...})
-```
-
 [Back to TOC](#table-of-contents)
 
-### dispatch
+# Installation
 
-`syntax: ok = rx:dispatch(path, opts, ...)`
+## From LuaRocks
 
-* `path`: client request path.
-* `opts`: a Lua table (optional).
-  * `method`: optional, method name of client request.
-  * `host`: optional, client request host.
-  * `remote_addr`: optional, client remote address like `192.168.1.100`.
-  * `vars`: optional, a Lua table to fetch variable, default value is `ngx.var` to fetch Nginx builtin variable.
-
-Matches the route by `method`, `path` and `host` etc, and call `handler` function if successful.
-
-```lua
-local ok = rx:dispatch(ngx.var.uri, {...})
+```shell
+luarocks install lua-resty-radixtree
 ```
 
-[Back to TOC](#table-of-contents)
-
-## Install
-
-### Compile and install
+## From Source
 
 ```shell
 make install
@@ -215,26 +280,35 @@ make install
 
 [Back to TOC](#table-of-contents)
 
-## DEV ENV
+# Development
 
-### Install Dependencies
+To install dependencies, run:
 
 ```shell
 make deps
 ```
 
-## Benchmark
+[Back to TOC](#table-of-contents)
 
-We wrote some simple benchmark scripts.
-Machine environment: MacBook Pro (16-inch, 2019), CPU 2.3 GHz Intel Core i9.
+# Benchmarks
+
+These are [simple benchmarks](./benchmark/).
+
+Environment: MacBook Pro (16-inch, 2019), CPU 2.3 GHz Intel Core i9.
+
+To start benchmarking, run:
 
 ```shell
-$ make
-cc -O2 -g -Wall -fpic -std=c99 -Wno-pointer-to-int-cast -Wno-int-to-pointer-cast -DBUILDING_SO -c src/rax.c -o src/rax.o
-cc -O2 -g -Wall -fpic -std=c99 -Wno-pointer-to-int-cast -Wno-int-to-pointer-cast -DBUILDING_SO -c src/easy_rax.c -o src/easy_rax.o
-cc -shared -fvisibility=hidden src/rax.o src/easy_rax.o -o librestyradixtree.so
+make
+```
 
-$ make bench
+```shell
+make bench
+```
+
+Results:
+
+```shell
 resty -I=./lib -I=./deps/share/lua/5.1 benchmark/match-parameter.lua
 matched res: 1
 route count: 100000

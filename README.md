@@ -19,7 +19,7 @@ Used by:
 Developed by [API7.ai](https://api7.ai/).
 
 > **Note**
-> 
+>
 > API7.ai provides technical support for the software it maintains like this library and [Apache APISIX](https://github.com/apache/apisix). Please [contact us](https://api7.ai/contact) to learn more.
 
 # Table of Contents
@@ -142,13 +142,13 @@ Each route can have the following attributes:
 | filter_fun   | Optional  | User defined filter function to match the route. Can be used for custom matching scenarios. `vars` and `opts` will be passed to the function when matching a route.                                          | function(vars) return vars["arg_name"] == "json" end |
 | priority     | Optional  | Route priority. Defaults to 0.                                                                                                                                                                               | priority = 100                                       |
 | metadata     | Optional  | `metadata` will be returned when a route matches while using `rx:match`.                                                                                                                                     |                                                      |
-| handler      | Optional  | `handler` function will be called when a route matches while using `rx:dispatch`                                                                                                                             |                                                      |
+| handler      | Optional  | `handler` function will be called when a route matches while using `rx:dispatch`.                                                                                                                            |                                                      |
 
 `opts` is an optional configuration that controls the behavior of a match. It can have the following attribute:
 
-| Name           | Description                                       | Default |
-| -------------- | ------------------------------------------------- | ------- |
-| no_param_match | disable [Parameters in path](#parameters-in-path) | false   |
+| Name           | Description                                         | Default |
+| -------------- | --------------------------------------------------- | ------- |
+| no_param_match | Disables [Parameters in path](#parameters-in-path). | false   |
 
 [Back to TOC](#table-of-contents)
 
@@ -169,7 +169,7 @@ metadata = rx:match(path, opts)
 `opts` is an optional attribute and a table. It can have the following attributes:
 
 | Name        | Required? | Description                                                                          |
-|-------------|-----------|--------------------------------------------------------------------------------------|
+| ----------- | --------- | ------------------------------------------------------------------------------------ |
 | method      | Optional  | HTTP method of the client request.                                                   |
 | host        | Optional  | Host address of the client request.                                                  |
 | remote_addr | Optional  | Remote address (IPv4 or IPv6) of the client. Supports CIDR format.                   |
@@ -195,7 +195,7 @@ ok = rx:dispatch(path, opts, ...)
 `opts` is an optional attribute and a table. It can have the following attributes:
 
 | Name        | Required? | Description                                                                          |
-|-------------|-----------|--------------------------------------------------------------------------------------|
+| ----------- | --------- | ------------------------------------------------------------------------------------ |
 | method      | Optional  | HTTP method of the client request.                                                   |
 | host        | Optional  | Host address of the client request.                                                  |
 | remote_addr | Optional  | Remote address (IPv4 or IPv6) of the client. Supports CIDR format.                   |
@@ -252,12 +252,12 @@ You can specify parameters on a path. These can the be dynamically obtained from
 local rx = radix.new({
     {
         -- matches with `/user/john` but not `/user/` or `/user`
-        paths = {"/user/:user"}, -- for `/user/john`, `opts.matched.user` will be `john`  
+        paths = {"/user/:user"}, -- for `/user/john`, `opts.matched.user` will be `john`
         metadata = "metadata /user",
     },
     {
         -- But this will match `/user/john/` and also `/user/john/send`
-        paths = {"/user/:user/*action"}, -- for `/user/john/send`, `opts.matched.user` will be `john` and `opts.matched.action` will be `send` 
+        paths = {"/user/:user/*action"}, -- for `/user/john/send`, `opts.matched.user` will be `john` and `opts.matched.action` will be `send`
         metadata = "metadata action",
     },
 })

@@ -55,6 +55,8 @@ local empty_table = {}
 local str_find    = string.find
 local str_lower   = string.lower
 local remove_tab  = table.remove
+local str_byte    = string.byte
+local ASTERISK    = str_byte("*")
 
 
 setmetatable(empty_table, {__newindex = function()
@@ -439,7 +441,7 @@ local function common_route_data(path, route, route_opts, global_opts)
         route_opts.hosts = {}
         for _, h in ipairs(hosts) do
             local is_wildcard = false
-            if h and h:sub(1, 1) == '*' then
+            if h and str_byte(h) == ASTERISK then
                 is_wildcard = true
                 h = h:sub(2)
             end
@@ -452,7 +454,7 @@ local function common_route_data(path, route, route_opts, global_opts)
     elseif type(hosts) == "string" then
         local is_wildcard = false
         local host = str_lower(hosts)
-        if host:sub(1, 1) == '*' then
+        if str_byte(host) == ASTERISK then
             is_wildcard = true
             host = host:sub(2)
         end

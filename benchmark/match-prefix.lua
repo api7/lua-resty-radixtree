@@ -1,6 +1,6 @@
 local radix = require("resty.radixtree")
 local route_count = 1000 * 100
-local match_times = 1000 * 1000
+local match_times = 1000 * 1
 
 local routes = {}
 for i = 1, route_count do
@@ -8,7 +8,7 @@ for i = 1, route_count do
 end
 
 local rx = radix.new(routes)
-ngx.say("case 1: route matched ", res)
+ngx.say("case 1: route matched ")
 ngx.update_time()
 local start_time = ngx.now()
 
@@ -27,7 +27,7 @@ ngx.say("time used  : ", used_time, " sec")
 ngx.say("QPS        : ", math.floor(match_times / used_time))
 
 ngx.say("=================")
-ngx.say("case 2: route not matched ", res)
+ngx.say("case 2: route not matched ")
 ngx.update_time()
 start_time = ngx.now()
 

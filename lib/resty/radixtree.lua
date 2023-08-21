@@ -116,6 +116,7 @@ ffi_cdef[[
     void *radix_tree_search(void *t, void *it, const unsigned char *buf,
         size_t len);
     int radix_tree_prev(void *it, const unsigned char *buf, size_t len);
+    int radix_tree_up(void *it, const unsigned char *buf, size_t len);
     int radix_tree_stop(void *it);
 
     void *radix_tree_new_it(void *t);
@@ -833,7 +834,7 @@ local function match_route(self, path, opts, args)
     end
 
     while true do
-        local idx = radix.radix_tree_prev(it, path, #path)
+        local idx = radix.radix_tree_up(it, path, #path)
         if idx <= 0 then
             break
         end

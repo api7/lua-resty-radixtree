@@ -167,6 +167,30 @@ radix_tree_prev(void *it, const unsigned char *buf, size_t len)
 
 
 int
+radix_tree_up(void *it, const unsigned char *buf, size_t len)
+{
+    raxIterator    *iter = it;
+    int             res;
+
+    while (1) {
+        res = raxUp(iter);
+        if (!res) {
+            return -1;
+        }
+
+        if (iter->key_len > len ||
+            memcmp(buf, iter->key, iter->key_len) != 0) {
+            continue;
+        }
+
+        break;
+    }
+
+    return (int)iter->data;
+}
+
+
+int
 radix_tree_stop(void *it)
 {
     if (!it) {

@@ -1501,6 +1501,48 @@ int raxIteratorPrevStep(raxIterator *it, int noup) {
     }
 }
 
+
+int raxIteratorUpStep(raxIterator *it) {
+    if (it->flags & RAX_ITER_EOF) {
+        return 1;
+    } else if (it->flags & RAX_ITER_JUST_SEEKED) {
+        it->flags &= ~RAX_ITER_JUST_SEEKED;
+        return 1;
+    }
+
+    /* Save key len, stack items and the node where we are currently
+     * so that on iterator EOF we can restore the current key and state. */
+    size_t orig_key_len = it->key_len;
+    size_t orig_stack_items = it->stack.items;
+    raxNode *orig_node = it->node;
+
+    while(1) {
+        /* Already on head? Can't go up, iteration finished. */
+        if (it->node == it->rt->head) {
+            it->flags |= RAX_ITER_EOF;
+            it->stack.items = orig_stack_items;
+            it->key_len = orig_key_len;
+            it->node = orig_node;
+            return 1;
+        }
+
+        it->node = raxStackPop(&it->stack);
+
+        /* Adjust the current key to represent the node we are
+         * at. */
+        int todel = it->node->iscompr ? it->node->size : 1;
+        raxIteratorDelChars(it,todel);
+
+        /* Return the key: this could be the key we found scanning a new
+         * subtree, or if we did not find a new subtree to explore here,
+         * before giving up with this node, check if it's a key itself. */
+        if (it->node->iskey) {
+            it->data = raxGetData(it->node);
+            return 1;
+        }
+    }
+}
+
 /* Seek an iterator at the specified element.
  * Return 0 if the seek failed for syntax error or out of memory. Otherwise
  * 1 is returned. When 0 is returned for out of memory, errno is set to
@@ -1708,6 +1750,18 @@ int raxNext(raxIterator *it) {
  * returned. In case 0 is returned because of OOM, errno is set to ENOMEM. */
 int raxPrev(raxIterator *it) {
     if (!raxIteratorPrevStep(it,0)) {
+        errno = ENOMEM;
+        return 0;
+    }
+    if (it->flags & RAX_ITER_EOF) {
+        errno = 0;
+        return 0;
+    }
+    return 1;
+}
+
+int raxUp(raxIterator *it) {
+    if (!raxIteratorUpStep(it)) {
         errno = ENOMEM;
         return 0;
     }

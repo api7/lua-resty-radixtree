@@ -577,8 +577,8 @@ function _M.new(routes, opts)
             tree = tree,
             tree_it = tree_it,
             match_data_index = 0,
-            match_data = new_tab(#routes, 0),
-            hash_path = new_tab(0, #routes),
+            match_data = new_tab(route_n, 0),
+            hash_path = new_tab(0, route_n),
         }, mt)
 
     -- register routes

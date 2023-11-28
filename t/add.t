@@ -100,7 +100,6 @@ metadata add route succeed.
                     end
                 }
             })
-
             ngx.say(rx:dispatch("/aa", opts))
         }
     }

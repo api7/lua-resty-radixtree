@@ -82,3 +82,32 @@ GET /t?name=json&weight=20
 --- response_body
 metadata add route succeed.
 --- error_code: 200
+
+
+
+=== TEST 2: test host and port
+--- config
+    location /t {
+        content_by_lua_block {
+            local opts = {vars = {server_port = 9080, handler}, host="127.0.0.1"}
+            local radix = require("resty.radixtree")
+            local rx = radix.new({
+                {
+                    paths = {"/aa*"},
+                    hosts = {"127.0.0.1:9080"},
+                    handler = function (ctx)
+                        ngx.say("pass")
+                    end
+                }
+            })
+
+            ngx.say(rx:dispatch("/aa", opts))
+        }
+    }
+--- request
+GET /t
+--- no_error_log
+[error]
+--- response_body
+pass
+true

@@ -110,3 +110,30 @@ GET /t
 --- response_body
 pass
 true
+
+
+=== TEST 3: test domain and port
+--- config
+    location /t {
+        content_by_lua_block {
+            local opts = {vars = {server_port = 9080, handler}, host="www.foo.com"}
+            local radix = require("resty.radixtree")
+            local rx = radix.new({
+                {
+                    paths = {"/aa*"},
+                    hosts = "www.foo.com:9080",
+                    handler = function (ctx)
+                        ngx.say("pass")
+                    end
+                }
+            })
+            ngx.say(rx:dispatch("/aa", opts))
+        }
+    }
+--- request
+GET /t
+--- no_error_log
+[error]
+--- response_body
+pass
+true

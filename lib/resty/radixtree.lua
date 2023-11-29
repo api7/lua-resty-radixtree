@@ -739,7 +739,7 @@ local function match_route_opts(route, opts, args)
         if host then
             local len = #hosts
             for i = 1, len, 2 do
-                if string.find(hosts[i+1], ":") then
+                if str_find(hosts[i+1], ":", 1, true) then
                     if opts.vars.server_port then
                         host = host .. ":" .. opts.vars.server_port
                     end

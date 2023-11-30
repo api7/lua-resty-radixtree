@@ -743,6 +743,8 @@ local function match_route_opts(route, opts, args)
                     if opts.vars.http_host then
                         host = opts.vars.http_host
                     end
+                else
+                    host = opts.host
                 end
                 if match_host(hosts[i], hosts[i + 1], host) then
                     if opts_matched_exists then

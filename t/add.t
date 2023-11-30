@@ -193,3 +193,31 @@ GET /t
 --- response_body
 pass
 true
+
+
+
+=== TEST 6: match many host
+--- config
+    location /t {
+        content_by_lua_block {
+            local opts = {vars = {http_host = "127.0.0.1:9980"}, host = "127.0.0.1"}
+            local radix = require("resty.radixtree")
+            local rx = radix.new({
+                {
+                    paths = {"/aa*"},
+                    hosts = {"www.foo.com:9080", "127.0.0.1:9991", "www.bar.com:9200", "127.0.0.1"},
+                    handler = function (ctx)
+                        ngx.say("pass")
+                    end
+                }
+            })
+            ngx.say(rx:dispatch("/aa", opts))
+        }
+    }
+--- request
+GET /t
+--- no_error_log
+[error]
+--- response_body
+pass
+true

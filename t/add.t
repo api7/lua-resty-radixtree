@@ -163,6 +163,8 @@ true
 GET /t
 --- no_error_log
 [error]
+--- response_body
+nil
 
 
 

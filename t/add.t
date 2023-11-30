@@ -89,7 +89,7 @@ metadata add route succeed.
 --- config
     location /t {
         content_by_lua_block {
-            local opts = {vars = {server_port = 9080, handler}, host="127.0.0.1"}
+            local opts = {vars = {http_host = "127.0.0.1:9080"}, host = "127.0.0.1"}
             local radix = require("resty.radixtree")
             local rx = radix.new({
                 {
@@ -112,16 +112,70 @@ pass
 true
 
 
+
 === TEST 3: test domain and port
 --- config
     location /t {
         content_by_lua_block {
-            local opts = {vars = {server_port = 9080, handler}, host="www.foo.com"}
+            local opts = {vars = {http_host = "www.foo.com:9080"}, host = "www.foo.com"}
             local radix = require("resty.radixtree")
             local rx = radix.new({
                 {
                     paths = {"/aa*"},
                     hosts = "www.foo.com:9080",
+                    handler = function (ctx)
+                        ngx.say("pass")
+                    end
+                }
+            })
+            ngx.say(rx:dispatch("/aa", opts))
+        }
+    }
+--- request
+GET /t
+--- no_error_log
+[error]
+--- response_body
+pass
+true
+
+
+
+=== TEST 4: match failed
+--- config
+    location /t {
+        content_by_lua_block {
+            local opts = {vars = {http_host = "127.0.0.1"}, host = "127.0.0.1"}
+            local radix = require("resty.radixtree")
+            local rx = radix.new({
+                {
+                    paths = {"/aa*"},
+                    hosts = "127.0.0.1:9080",
+                    handler = function (ctx)
+                        ngx.say("pass")
+                    end
+                }
+            })
+            ngx.say(rx:dispatch("/aa", opts))
+        }
+    }
+--- request
+GET /t
+--- no_error_log
+[error]
+
+
+
+=== TEST 5: match success
+--- config
+    location /t {
+        content_by_lua_block {
+            local opts = {vars = {http_host = "127.0.0.1:9080"}, host = "127.0.0.1"}
+            local radix = require("resty.radixtree")
+            local rx = radix.new({
+                {
+                    paths = {"/aa*"},
+                    hosts = "127.0.0.1",
                     handler = function (ctx)
                         ngx.say("pass")
                     end

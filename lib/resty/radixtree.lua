@@ -666,6 +666,11 @@ local function fetch_pat(path)
     end
 
     pat = table.concat(res, [[\/]])
+    -- As ngx.re.split will remove empty trailing items check if there is a trailing slash and append it
+    if path:sub(-1) == '/' then
+        pat = pat .. [[\/]]
+    end
+
     lru_pat:set(path, {pat, names}, 60 * 60)
     return pat, names
 end

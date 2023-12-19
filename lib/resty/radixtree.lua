@@ -637,7 +637,7 @@ end
 local function fetch_pat(path)
     local pat = lru_pat:get(path)
     if pat then
-        return pat[1], pat[2]   -- pat, names
+        return pat -- pat
     end
 
     clear_tab(tmp)
@@ -646,28 +646,39 @@ local function fetch_pat(path)
         return false
     end
 
-    local names = {}
+    local name, pos, regex
     for i, item in ipairs(res) do
         local first_byte = item:byte(1, 1)
         if first_byte == string.byte(":") then
-            table.insert(names, res[i]:sub(2))
-            -- See https://www.rfc-editor.org/rfc/rfc1738.txt BNF for specific URL schemes
-            res[i] = [=[([\w\-_;:@&=!',\%\$\.\+\*\(\)]+)]=]
-
-        elseif first_byte == string.byte("*") then
-            local name = res[i]:sub(2)
-            if name == "" then
-                name = ":ext"
+            pos = str_find(res[i], ":", 3, true)
+            if pos and pos+1 < res[i]:len() then
+                name = res[i]:sub(2, pos - 1)
+                regex = res[i]:sub(pos+1)
+            else
+                name = res[i]:sub(2)
+                -- See https://www.rfc-editor.org/rfc/rfc1738.txt BNF for specific URL schemes
+                regex = [=[[\w\-_;:@&=!',\%\$\.\+\*\(\)]+]=]
             end
-            table.insert(names, name)
+
+            res[i] = '(?<' .. name .. '>' .. regex .. ')'
+        elseif first_byte == string.byte("*") then
+            name = res[i]:sub(2)
+            if name == "" then
+                name = "__ext"
+            end
+
             -- '.' matches any character except newline
-            res[i] = [=[((.|\n)*)]=]
+            res[i] = '(?<' .. name .. '>' .. [=[(?:.|\n)*)]=]
         end
     end
 
+    if name == nil then
+        return false
+    end
+
     pat = table.concat(res, [[\/]])
-    lru_pat:set(path, {pat, names}, 60 * 60)
-    return pat, names
+    lru_pat:set(path, pat, 60 * 60)
+    return pat
 end
 
 
@@ -676,9 +687,9 @@ local function compare_param(req_path, route, opts)
         return true
     end
 
-    local pat, names = fetch_pat(route.path_org)
+    local pat = fetch_pat(route.path_org)
     log_debug("pcre pat: ", pat)
-    if #names == 0 then
+    if pat == false then
         return true
     end
 
@@ -695,10 +706,14 @@ local function compare_param(req_path, route, opts)
         return true
     end
 
-    for i, v in ipairs(m) do
-        local name = names[i]
-        if name and v then
-            opts.matched[name] = v
+    for k, v in pairs(m) do
+        if type(k) == "string" and v then
+            -- Capture groups can't start with a colon.
+            if k == "__ext" then
+                opts.matched[":ext"] = v
+            else
+                opts.matched[k] = v
+            end
         end
     end
     return true

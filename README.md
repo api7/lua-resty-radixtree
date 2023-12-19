@@ -263,6 +263,21 @@ local rx = radix.new({
 })
 ```
 
+### Parameters in Path with a custom regex
+
+You can specify parameters on a path and use a regex to match the parameter segment of the path (see `hsegment` of [RFC1738](https://www.rfc-editor.org/rfc/rfc1738.txt).
+It is not possible to match multiple path segements in this way.
+
+```lua
+local rx = radix.new({
+    {
+        -- matches with `/user/john` but not `/user/` or `/user`
+        paths = {"/user/:uuid:[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}"}, -- for `/user/5b3c7845-b45c-4dc8-8843-0349465e0e62`, `opts.matched.user` will be `5b3c7845-b45c-4dc8-8843-0349465e0e62`
+        metadata = "metadata /user",
+    }
+})
+```
+
 [Back to TOC](#table-of-contents)
 
 # Installation

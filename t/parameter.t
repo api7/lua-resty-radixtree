@@ -392,3 +392,39 @@ GET /t
 --- response_body
 match meta: /user/:user
 match meta: /user/:user/age/:age
+
+
+
+=== TEST 12: /name/:name/ (respect trailing slash)
+--- config
+    location /t {
+        content_by_lua_block {
+            local json = require("toolkit.json")
+            local radix = require("resty.radixtree")
+            local rx = radix.new({
+                {
+                    paths = {"/name/:name/"},
+                    metadata = "metadata /name",
+                },
+            })
+
+            local opts = {matched = {}}
+            local meta = rx:match("/name/json/", opts)
+            ngx.say("match meta: ", meta)
+            ngx.say("matched: ", json.encode(opts.matched))
+
+            opts.matched = {}
+            meta = rx:match("/name/json", opts)
+            ngx.say("match meta: ", meta)
+            ngx.say("matched: ", json.encode(opts.matched))
+        }
+    }
+--- request
+GET /t
+--- no_error_log
+[error]
+--- response_body
+match meta: metadata /name
+matched: {"_path":"/name/:name/","name":"json"}
+match meta: nil
+matched: []

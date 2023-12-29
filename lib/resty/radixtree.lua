@@ -259,9 +259,9 @@ local function modify_route(self, opts)
             log_err("no route array exists or route array is not a table in hash_path.", path, opts.id)
             return false
         end
-        
+
         update_tab_in_order(route_arr, opts, sort_route)
-        
+
         return true
     end
 
@@ -279,7 +279,7 @@ local function modify_route(self, opts)
     end
 
     update_tab_in_order(routes, opts, sort_route)
-    
+
     return true
 end
 
@@ -287,7 +287,7 @@ end
 local function remove_route(self, opts)
     local path = opts.path
     opts = clone_tab(opts)
-    
+
     if not self.disable_path_cache_opt and opts.path_op == '=' then
         local route_arr = self.hash_path[path]
         if route_arr == nil or type(route_arr) ~= "table" then
@@ -347,7 +347,7 @@ local function remove_route(self, opts)
                 return
             end
         end
-    
+
         log_err("removed route does not exist.", opts.id)
         return
     end
@@ -506,7 +506,7 @@ end
 
 
 local function pre_update_route(self, path, route, global_opts)
-    if type(path) ~= "string" then 
+    if type(path) ~= "string" then
         error("invalid argument path", 2)
     end
 
@@ -628,9 +628,9 @@ end
 
 
 local tmp = {}
-local lru_pat, err = lrucache.new(1000)
+local lru_pat, lru_pat_err = lrucache.new(1000)
 if not lru_pat then
-    error("failed to generate new lru object: " .. err)
+    error("failed to generate new lru object: " .. lru_pat_err)
 end
 
 
@@ -666,6 +666,11 @@ local function fetch_pat(path)
     end
 
     pat = table.concat(res, [[\/]])
+    -- As ngx.re.split will remove empty trailing items check if there is a trailing slash and append it
+    if path:sub(-1) == '/' then
+        pat = pat .. [[\/]]
+    end
+
     lru_pat:set(path, {pat, names}, 60 * 60)
     return pat, names
 end
@@ -891,7 +896,7 @@ function _M.update_route(self, pre_r, r, opts)
     end
 
     local common = {}
-    for k,v in pairs(pre_t) do
+    for k in pairs(pre_t) do
         if t[k] ~= nil then
             table.insert(common, k)
         end
@@ -899,16 +904,16 @@ function _M.update_route(self, pre_r, r, opts)
 
     for _, p in ipairs(common) do
         pre_update_route(self, p, r, opts)
-        
+
         pre_t[p] = nil
         t[p] = nil
     end
 
-    for k,v in pairs(pre_t) do
+    for k in pairs(pre_t) do
         pre_delete_route(self, k, pre_r, opts)
     end
 
-    for k,v in pairs(t) do
+    for k in pairs(t) do
         pre_insert_route(self, k, r, opts)
     end
 end

@@ -56,6 +56,7 @@ local str_find    = string.find
 local str_lower   = string.lower
 local remove_tab  = table.remove
 local str_byte    = string.byte
+local sub_str     = string.sub
 local ASTERISK    = str_byte("*")
 
 
@@ -149,6 +150,16 @@ local function has_suffix(s, suffix)
     return rc == 0
 end
 
+local function has_prefix(s, prefix)
+    if type(s) ~= "string" or type(prefix) ~= "string" then
+        error("unexpected type: s:" .. type(s) .. ", prefix:" .. type(prefix))
+    end
+    if #s < #prefix then
+        return false
+    end
+    local rc = C.memcmp(s, prefix, #prefix)
+    return rc == 0
+end
 
 -- only work under lua51 or luajit
 local function setmt__gc(t, mt)
@@ -676,37 +687,27 @@ local function fetch_pat(path)
 end
 
 
-local function compare_param(req_path, route, opts)
+local function match_route_params(req_path, route, opts)
     if not opts.matched and not route.param then
-        return true
+        return true, nil, nil
     end
 
     local pat, names = fetch_pat(route.path_org)
     log_debug("pcre pat: ", pat)
     if #names == 0 then
-        return true
+        return true, nil, nil
     end
 
     local m = re_match(req_path, pat, "jo")
     if not m then
-        return false
+        return false, nil, nil
     end
 
     if m[0] ~= req_path then
-        return false
+        return false, nil, nil
     end
 
-    if not opts.matched then
-        return true
-    end
-
-    for i, v in ipairs(m) do
-        local name = names[i]
-        if name and v then
-            opts.matched[name] = v
-        end
-    end
-    return true
+    return true, m, names
 end
 
 
@@ -763,12 +764,43 @@ local function match_route_opts(route, path, opts, args)
         end
     end
 
-    if path ~=nil and not compare_param(path, route, opts) then
-        return false
+    local opts_vars = opts.vars or ngx_var
+    local param_matches, param_names
+    if path ~=nil then
+        local matched
+        matched, param_matches, param_names = match_route_params(path, route, opts)
+        if not matched then
+            return false
+        end
+
+        -- Allow vars expr or filter_fun to use `uri_param_<name>`
+        if route.vars or route.filter_fun then
+            local vars = {
+                _vars = opts_vars,
+                _uri_param_matches = param_matches,
+                _uri_param_names = param_names
+            }
+            setmetatable(vars, {
+                __index = function(t, key)
+                    if type(key) == "string" and has_prefix(key, "uri_param_") then
+                        local param_key = sub_str(key, 11)
+                        for i, name in ipairs(t._uri_param_names) do
+                            if name == param_key then
+                                return t._uri_param_matches[i]
+                            end
+                        end
+                        return nil
+                    end
+                    return t._vars[key]
+                end
+            })
+
+            opts_vars = vars
+        end
     end
 
     if route.vars then
-        local ok, err = route.vars:eval(opts.vars, opts)
+        local ok, err = route.vars:eval(opts_vars, opts)
         if not ok then
             if ok == nil then
                 log_err("failed to eval expression: ", err)
@@ -785,13 +817,23 @@ local function match_route_opts(route, path, opts, args)
             -- now we can safely clear the self.args
             local args_len = args[0]
             args[0] = nil
-            ok = fn(opts.vars or ngx_var, opts, unpack(args, 1, args_len))
+            ok = fn(opts_vars, opts, unpack(args, 1, args_len))
         else
-            ok = fn(opts.vars or ngx_var, opts)
+            ok = fn(opts_vars, opts)
         end
 
         if not ok then
             return false
+        end
+    end
+
+    -- Add the matched uri parameters
+    if opts.matched and param_names and param_matches then
+        for i, v in ipairs(param_matches) do
+            local name = param_names[i]
+            if name and v then
+                opts.matched[name] = v
+            end
         end
     end
 

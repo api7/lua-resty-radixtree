@@ -486,9 +486,7 @@ local function common_route_data(path, route, route_opts, global_opts)
     else
         pos = str_find(path, '*', 1, true)
         if pos then
-            if pos ~= #path then
-                route_opts.param = true
-            end
+            route_opts.param = true
             path = path:sub(1, pos - 1)
             route_opts.path_op = "<="
         else
@@ -766,7 +764,7 @@ local function match_route_opts(route, path, opts, args)
 
     local opts_vars = opts.vars or ngx_var
     local param_matches, param_names
-    if path ~=nil then
+    if route.param then
         local matched
         matched, param_matches, param_names = match_route_params(path, route, opts)
         if not matched then
@@ -855,7 +853,7 @@ local function match_route(self, path, opts, args)
     local routes = self.hash_path[path]
     if routes then
         for _, route in ipairs(routes) do
-            if match_route_opts(route, nil, opts, args) then
+            if match_route_opts(route, path, opts, args) then
                 return route
             end
         end

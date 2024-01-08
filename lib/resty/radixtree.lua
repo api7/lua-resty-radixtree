@@ -774,28 +774,14 @@ local function match_route_opts(route, path, opts, args)
         end
 
         -- Allow vars expr or filter_fun to use `uri_param_<name>`
-        if route.vars or route.filter_fun then
-            local vars = {
-                _vars = opts_vars,
-                _uri_param_matches = param_matches,
-                _uri_param_names = param_names
-            }
-            setmetatable(vars, {
-                __index = function(t, key)
-                    if type(key) == "string" and has_prefix(key, "uri_param_") then
-                        local param_key = sub_str(key, 11)
-                        for i, name in ipairs(t._uri_param_names) do
-                            if name == param_key then
-                                return t._uri_param_matches[i]
-                            end
-                        end
-                        return nil
-                    end
-                    return t._vars[key]
+        if (route.vars or route.filter_fun) and param_names and param_matches then
+            opts_vars = clone_tab(opts_vars)
+            for i, v in ipairs(param_matches) do
+                local name = param_names[i]
+                if name and v then
+                    opts_vars["uri_param_" .. name] = v
                 end
-            })
-
-            opts_vars = vars
+            end
         end
     end
 

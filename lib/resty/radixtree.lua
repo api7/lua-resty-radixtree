@@ -827,12 +827,17 @@ local function match_route_opts(route, path, opts, args)
         end
     end
 
-    -- Add the matched uri parameters
-    if opts.matched and param_names and param_matches then
-        for i, v in ipairs(param_matches) do
-            local name = param_names[i]
-            if name and v then
-                opts.matched[name] = v
+    -- Add matched info
+    if opts_matched_exists then
+        opts.matched._path = route.path_org
+
+        -- Add matched uri parameters
+        if param_names and param_matches then
+            for i, v in ipairs(param_matches) do
+                local name = param_names[i]
+                if name and v then
+                    opts.matched[name] = v
+                end
             end
         end
     end
@@ -842,12 +847,8 @@ end
 
 
 local function _match_from_routes(routes, path, opts, args)
-    local opts_matched_exists = (opts.matched ~= nil)
     for _, route in ipairs(routes) do
         if match_route_opts(route, path, opts, args) then
-            if opts_matched_exists then
-                opts.matched._path = route.path_org
-            end
             return route
         end
     end
@@ -867,12 +868,8 @@ local function match_route(self, path, opts, args)
 
     local routes = self.hash_path[path]
     if routes then
-        local opts_matched_exists = (opts.matched ~= nil)
         for _, route in ipairs(routes) do
             if match_route_opts(route, nil, opts, args) then
-                if opts_matched_exists then
-                    opts.matched._path = path
-                end
                 return route
             end
         end

@@ -710,7 +710,7 @@ local function compare_param(req_path, route, opts)
 end
 
 
-local function match_route_opts(route, opts, args)
+local function match_route_opts(route, path, opts, args)
     local method = opts.method
     local opts_matched_exists = (opts.matched ~= nil)
     if route.method ~= nil and route.method ~= 0 then
@@ -763,6 +763,10 @@ local function match_route_opts(route, opts, args)
         end
     end
 
+    if path ~=nil and not compare_param(path, route, opts) then
+        return false
+    end
+
     if route.vars then
         local ok, err = route.vars:eval(opts.vars, opts)
         if not ok then
@@ -798,13 +802,11 @@ end
 local function _match_from_routes(routes, path, opts, args)
     local opts_matched_exists = (opts.matched ~= nil)
     for _, route in ipairs(routes) do
-        if match_route_opts(route, opts, args) then
-            if compare_param(path, route, opts) then
-                if opts_matched_exists then
-                    opts.matched._path = route.path_org
-                end
-                return route
+        if match_route_opts(route, path, opts, args) then
+            if opts_matched_exists then
+                opts.matched._path = route.path_org
             end
+            return route
         end
     end
 
@@ -825,7 +827,7 @@ local function match_route(self, path, opts, args)
     if routes then
         local opts_matched_exists = (opts.matched ~= nil)
         for _, route in ipairs(routes) do
-            if match_route_opts(route, opts, args) then
+            if match_route_opts(route, nil, opts, args) then
                 if opts_matched_exists then
                     opts.matched._path = path
                 end

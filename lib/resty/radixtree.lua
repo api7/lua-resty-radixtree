@@ -670,7 +670,7 @@ local function fetch_pat(path)
             end
             table.insert(names, name)
             -- '.' matches any character except newline
-            res[i] = [=[((.|\n)*)]=]
+            res[i] = [=[((?:.|\n)*)]=]
         end
     end
 

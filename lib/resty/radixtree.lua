@@ -687,22 +687,22 @@ end
 
 local function match_route_params(req_path, route, opts)
     if not opts.matched and not route.param then
-        return true, nil, nil
+        return true
     end
 
     local pat, names = fetch_pat(route.path_org)
     log_debug("pcre pat: ", pat)
     if #names == 0 then
-        return true, nil, nil
+        return true
     end
 
     local m = re_match(req_path, pat, "jo")
     if not m then
-        return false, nil, nil
+        return false
     end
 
     if m[0] ~= req_path then
-        return false, nil, nil
+        return false
     end
 
     return true, m, names

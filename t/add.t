@@ -82,3 +82,142 @@ GET /t?name=json&weight=20
 --- response_body
 metadata add route succeed.
 --- error_code: 200
+
+
+
+=== TEST 2: test host and port
+--- config
+    location /t {
+        content_by_lua_block {
+            local opts = {vars = {http_host = "127.0.0.1:9080"}, host = "127.0.0.1"}
+            local radix = require("resty.radixtree")
+            local rx = radix.new({
+                {
+                    paths = {"/aa*"},
+                    hosts = {"127.0.0.1:9080"},
+                    handler = function (ctx)
+                        ngx.say("pass")
+                    end
+                }
+            })
+            ngx.say(rx:dispatch("/aa", opts))
+        }
+    }
+--- request
+GET /t
+--- no_error_log
+[error]
+--- response_body
+pass
+true
+
+
+
+=== TEST 3: test domain and port
+--- config
+    location /t {
+        content_by_lua_block {
+            local opts = {vars = {http_host = "www.foo.com:9080"}, host = "www.foo.com"}
+            local radix = require("resty.radixtree")
+            local rx = radix.new({
+                {
+                    paths = {"/aa*"},
+                    hosts = "www.foo.com:9080",
+                    handler = function (ctx)
+                        ngx.say("pass")
+                    end
+                }
+            })
+            ngx.say(rx:dispatch("/aa", opts))
+        }
+    }
+--- request
+GET /t
+--- no_error_log
+[error]
+--- response_body
+pass
+true
+
+
+
+=== TEST 4: match failed
+--- config
+    location /t {
+        content_by_lua_block {
+            local opts = {vars = {http_host = "127.0.0.1"}, host = "127.0.0.1"}
+            local radix = require("resty.radixtree")
+            local rx = radix.new({
+                {
+                    paths = {"/aa*"},
+                    hosts = "127.0.0.1:9080",
+                    handler = function (ctx)
+                        ngx.say("pass")
+                    end
+                }
+            })
+            ngx.say(rx:dispatch("/aa", opts))
+        }
+    }
+--- request
+GET /t
+--- no_error_log
+[error]
+--- response_body
+nil
+
+
+
+=== TEST 5: match success
+--- config
+    location /t {
+        content_by_lua_block {
+            local opts = {vars = {http_host = "127.0.0.1:9080"}, host = "127.0.0.1"}
+            local radix = require("resty.radixtree")
+            local rx = radix.new({
+                {
+                    paths = {"/aa*"},
+                    hosts = "127.0.0.1",
+                    handler = function (ctx)
+                        ngx.say("pass")
+                    end
+                }
+            })
+            ngx.say(rx:dispatch("/aa", opts))
+        }
+    }
+--- request
+GET /t
+--- no_error_log
+[error]
+--- response_body
+pass
+true
+
+
+
+=== TEST 6: match many host
+--- config
+    location /t {
+        content_by_lua_block {
+            local opts = {vars = {http_host = "127.0.0.1:9980"}, host = "127.0.0.1"}
+            local radix = require("resty.radixtree")
+            local rx = radix.new({
+                {
+                    paths = {"/aa*"},
+                    hosts = {"www.foo.com:9080", "127.0.0.1:9991", "www.bar.com:9200", "127.0.0.1"},
+                    handler = function (ctx)
+                        ngx.say("pass")
+                    end
+                }
+            })
+            ngx.say(rx:dispatch("/aa", opts))
+        }
+    }
+--- request
+GET /t
+--- no_error_log
+[error]
+--- response_body
+pass
+true

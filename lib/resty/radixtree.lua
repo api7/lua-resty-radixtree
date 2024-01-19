@@ -204,6 +204,9 @@ local mt = { __index = _M, __gc = gc_free }
 
 
 local function sort_route(route_a, route_b)
+    if route_a.priority == route_b.priority then
+        return #route_a.path_org > #route_b.path_org
+    end
     return (route_a.priority or 0) > (route_b.priority or 0)
 end
 

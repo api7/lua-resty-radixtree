@@ -119,6 +119,7 @@ ffi_cdef[[
     void *radix_tree_search(void *t, void *it, const unsigned char *buf,
         size_t len);
     int radix_tree_prev(void *it, const unsigned char *buf, size_t len);
+    int radix_tree_up(void *it, const unsigned char *buf, size_t len);
     int radix_tree_stop(void *it);
 
     void *radix_tree_new_it(void *t);
@@ -214,6 +215,9 @@ local mt = { __index = _M, __gc = gc_free }
 
 
 local function sort_route(route_a, route_b)
+    if route_a.priority == route_b.priority then
+        return #route_a.path_org > #route_b.path_org
+    end
     return (route_a.priority or 0) > (route_b.priority or 0)
 end
 
@@ -743,6 +747,13 @@ local function match_route_opts(route, path, opts, args)
         if host then
             local len = #hosts
             for i = 1, len, 2 do
+                if str_find(hosts[i+1], ":", 1, true) then
+                    if opts.vars.http_host then
+                        host = opts.vars.http_host
+                    end
+                else
+                    host = opts.host
+                end
                 if match_host(hosts[i], hosts[i + 1], host) then
                     if opts_matched_exists then
                         if hosts[i] then
@@ -871,7 +882,7 @@ local function match_route(self, path, opts, args)
     end
 
     while true do
-        local idx = radix.radix_tree_prev(it, path, #path)
+        local idx = radix.radix_tree_up(it, path, #path)
         if idx <= 0 then
             break
         end

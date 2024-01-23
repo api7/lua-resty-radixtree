@@ -428,3 +428,48 @@ match meta: metadata /name
 matched: {"_path":"/name/:name/","name":"json"}
 match meta: nil
 matched: []
+
+
+
+=== TEST 13: route matching for routes with params and common prefix should not be dependent on registration order
+--- config
+    location /t {
+        content_by_lua_block {
+            local json = require("toolkit.json")
+            local radix = require("resty.radixtree")
+            local rx = radix.new({
+                {
+                    paths = {"/api/:version/test/api/projects/:project_id/clusters/:cluster_id/nodes/?"},
+                    metadata = "long",
+                },
+                {
+                    paths = {"/api/:version/test/api/projects/:project_id"},
+                    metadata = "medium",
+                },
+                {
+                    paths = {"/api/:version/test/*subpath"},
+                    metadata = "short",
+                },
+            })
+
+            -- should match long
+            local meta = rx:match("/api/v4/test/api/projects/saas/clusters/123/nodes/")
+            ngx.say("match meta: ", meta)
+
+            -- should match short
+            local meta = rx:match("/api/v4/test/api")
+            ngx.say("match meta: ", meta)
+
+            -- should match medium
+            local meta = rx:match("/api/v4/test/api/projects/saas")
+            ngx.say("match meta: ", meta)
+        }
+    }
+--- request
+GET /t
+--- no_error_log
+[error]
+--- response_body
+match meta: long
+match meta: short
+match meta: medium

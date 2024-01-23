@@ -603,3 +603,59 @@ match meta: metadata /name
 matched: {"_path":"/user/:uuid","uuid":"5b3c7845-b45c-4dc8-8843-0349465e0e62"}
 match meta: nil
 matched: []
+
+
+
+=== TEST 21: param validation with vars metamethods
+--- config
+    location /t {
+        content_by_lua_block {
+            local json = require("toolkit.json")
+            local radix = require("resty.radixtree")
+            local rx = radix.new({
+                {
+                    paths = { "/user/:uuid" },
+                    metadata = "metadata /name",
+                    vars = {
+                        {"uri_param_uuid", "~~", "([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12})"},
+                        {"hello", "==", "world"}
+                    }
+                },
+            })
+
+            local var = { _ctx = { hello = "world" } }
+            local mt = {
+                __index = function(t, key)
+                    return t._ctx[key]
+                end,
+
+                __newindex = function(t, key, val)
+                    t._ctx[key] = val
+                end,
+            }
+            setmetatable(var, mt)
+
+            local opts = {matched = {}, vars = var}
+            local meta = rx:match("/user/5b3c7845-b45c-4dc8-8843-0349465e0e62", opts)
+            ngx.say("match meta: ", meta)
+            ngx.say("matched: ", json.encode(opts.matched))
+            ngx.say("vars: ", json.encode(var))
+
+            opts.matched = {}
+            meta = rx:match("/user/1", opts)
+            ngx.say("match meta: ", meta)
+            ngx.say("matched: ", json.encode(opts.matched))
+            ngx.say("vars: ", json.encode(var))
+        }
+    }
+--- request
+GET /t
+--- no_error_log
+[error]
+--- response_body
+match meta: metadata /name
+matched: {"_path":"/user/:uuid","uuid":"5b3c7845-b45c-4dc8-8843-0349465e0e62"}
+vars: {"_ctx":{"hello":"world"}}
+match meta: nil
+matched: []
+vars: {"_ctx":{"hello":"world"}}

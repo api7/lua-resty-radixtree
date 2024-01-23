@@ -773,7 +773,13 @@ local function match_route_opts(route, path, opts, args)
 
         -- Allow vars expr or filter_fun to use `uri_param_<name>`
         if (route.vars or route.filter_fun) and param_names and param_matches then
+            -- clone table including the __index metamethod
+            local opts_vars_meta = getmetatable(opts_vars)
             opts_vars = clone_tab(opts_vars)
+            if opts_vars_meta then
+                setmetatable(opts_vars, { __index = opts_vars_meta.__index })
+            end
+
             for i, v in ipairs(param_matches) do
                 local name = param_names[i]
                 if name and v then

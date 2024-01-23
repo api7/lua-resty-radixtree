@@ -56,6 +56,7 @@ local str_find    = string.find
 local str_lower   = string.lower
 local remove_tab  = table.remove
 local str_byte    = string.byte
+local sub_str     = string.sub
 local ASTERISK    = str_byte("*")
 
 
@@ -150,6 +151,16 @@ local function has_suffix(s, suffix)
     return rc == 0
 end
 
+local function has_prefix(s, prefix)
+    if type(s) ~= "string" or type(prefix) ~= "string" then
+        error("unexpected type: s:" .. type(s) .. ", prefix:" .. type(prefix))
+    end
+    if #s < #prefix then
+        return false
+    end
+    local rc = C.memcmp(s, prefix, #prefix)
+    return rc == 0
+end
 
 -- only work under lua51 or luajit
 local function setmt__gc(t, mt)
@@ -479,9 +490,7 @@ local function common_route_data(path, route, route_opts, global_opts)
     else
         pos = str_find(path, '*', 1, true)
         if pos then
-            if pos ~= #path then
-                route_opts.param = true
-            end
+            route_opts.param = true
             path = path:sub(1, pos - 1)
             route_opts.path_op = "<="
         else
@@ -665,7 +674,7 @@ local function fetch_pat(path)
             end
             table.insert(names, name)
             -- '.' matches any character except newline
-            res[i] = [=[((.|\n)*)]=]
+            res[i] = [=[((?:.|\n)*)]=]
         end
     end
 
@@ -680,7 +689,7 @@ local function fetch_pat(path)
 end
 
 
-local function compare_param(req_path, route, opts)
+local function match_route_params(req_path, route, opts)
     if not opts.matched and not route.param then
         return true
     end
@@ -700,21 +709,11 @@ local function compare_param(req_path, route, opts)
         return false
     end
 
-    if not opts.matched then
-        return true
-    end
-
-    for i, v in ipairs(m) do
-        local name = names[i]
-        if name and v then
-            opts.matched[name] = v
-        end
-    end
-    return true
+    return true, m, names
 end
 
 
-local function match_route_opts(route, opts, args)
+local function match_route_opts(route, path, opts, args)
     local method = opts.method
     local opts_matched_exists = (opts.matched ~= nil)
     if route.method ~= nil and route.method ~= 0 then
@@ -774,8 +773,35 @@ local function match_route_opts(route, opts, args)
         end
     end
 
+    local opts_vars = opts.vars or ngx_var
+    local param_matches, param_names
+    if route.param then
+        local matched
+        matched, param_matches, param_names = match_route_params(path, route, opts)
+        if not matched then
+            return false
+        end
+
+        -- Allow vars expr or filter_fun to use `uri_param_<name>`
+        if (route.vars or route.filter_fun) and param_names and param_matches then
+            -- clone table including the __index metamethod
+            local opts_vars_meta = getmetatable(opts_vars)
+            opts_vars = clone_tab(opts_vars)
+            if opts_vars_meta then
+                setmetatable(opts_vars, { __index = opts_vars_meta.__index })
+            end
+
+            for i, v in ipairs(param_matches) do
+                local name = param_names[i]
+                if name and v then
+                    opts_vars["uri_param_" .. name] = v
+                end
+            end
+        end
+    end
+
     if route.vars then
-        local ok, err = route.vars:eval(opts.vars, opts)
+        local ok, err = route.vars:eval(opts_vars, opts)
         if not ok then
             if ok == nil then
                 log_err("failed to eval expression: ", err)
@@ -792,13 +818,28 @@ local function match_route_opts(route, opts, args)
             -- now we can safely clear the self.args
             local args_len = args[0]
             args[0] = nil
-            ok = fn(opts.vars or ngx_var, opts, unpack(args, 1, args_len))
+            ok = fn(opts_vars, opts, unpack(args, 1, args_len))
         else
-            ok = fn(opts.vars or ngx_var, opts)
+            ok = fn(opts_vars, opts)
         end
 
         if not ok then
             return false
+        end
+    end
+
+    -- Add matched info
+    if opts_matched_exists then
+        opts.matched._path = route.path_org
+
+        -- Add matched uri parameters
+        if param_names and param_matches then
+            for i, v in ipairs(param_matches) do
+                local name = param_names[i]
+                if name and v then
+                    opts.matched[name] = v
+                end
+            end
         end
     end
 
@@ -807,15 +848,9 @@ end
 
 
 local function _match_from_routes(routes, path, opts, args)
-    local opts_matched_exists = (opts.matched ~= nil)
     for _, route in ipairs(routes) do
-        if match_route_opts(route, opts, args) then
-            if compare_param(path, route, opts) then
-                if opts_matched_exists then
-                    opts.matched._path = route.path_org
-                end
-                return route
-            end
+        if match_route_opts(route, path, opts, args) then
+            return route
         end
     end
 
@@ -834,12 +869,8 @@ local function match_route(self, path, opts, args)
 
     local routes = self.hash_path[path]
     if routes then
-        local opts_matched_exists = (opts.matched ~= nil)
         for _, route in ipairs(routes) do
-            if match_route_opts(route, opts, args) then
-                if opts_matched_exists then
-                    opts.matched._path = path
-                end
+            if match_route_opts(route, path, opts, args) then
                 return route
             end
         end

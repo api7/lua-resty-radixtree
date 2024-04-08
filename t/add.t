@@ -221,3 +221,30 @@ GET /t
 --- response_body
 pass
 true
+
+
+
+=== TEST 7: match failed if http_host is not passed
+--- config
+    location /t {
+        content_by_lua_block {
+            local opts = {host = "127.0.0.1"}
+            local radix = require("resty.radixtree")
+            local rx = radix.new({
+                {
+                    paths = {"/aa*"},
+                    hosts = "127.0.0.1:9080",
+                    handler = function (ctx)
+                        ngx.say("pass")
+                    end
+                }
+            })
+            ngx.say(rx:dispatch("/aa", opts))
+        }
+    }
+--- request
+GET /t
+--- no_error_log
+[error]
+--- response_body
+nil

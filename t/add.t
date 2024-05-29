@@ -233,7 +233,7 @@ true
             local rx = radix.new({
                 {
                     paths = {"/aa*"},
-                    hosts = "127.0.0.1:9080",
+                    hosts = {"127.0.0.1:9080"},
                     handler = function (ctx)
                         ngx.say("pass")
                     end
